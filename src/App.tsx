@@ -1,5 +1,6 @@
+import { isUnsure } from './confidence'
 import { useEffect, useState } from 'react'
-import { lowConfidenceThreshold, taskGroups, type Task, type TaskKind, type TasksState } from './tasks'
+import { taskGroups, type Task, type TaskKind, type TasksState } from './tasks'
 
 import { CameraDialog, StoreOverview, type CameraSelection } from './StoreOverview'
 import { formatTime, getTimeline } from './time'
@@ -20,7 +21,7 @@ function Icon({ name, className = '' }: { name: 'eye' | 'check' | 'chevron' | Ta
 }
 
 function Confidence({ task }: { task: Task }) {
-  return (task.confidence === null || task.confidence < lowConfidenceThreshold)
+  return isUnsure(task.confidence)
     ? <span className="confidence">Unsure{task.confidence === null ? '' : ` · ${Math.round(task.confidence * 100)}%`}</span>
     : null
 }

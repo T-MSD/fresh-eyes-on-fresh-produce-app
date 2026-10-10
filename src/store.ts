@@ -11,6 +11,8 @@ export type CameraState = { id: string; name: string; frame: CameraFrame; areas:
 export type StoreCounts = { empty: number; wrong: number; half: number; ok: number; unavailable: number }
 export type StoreState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; cameras: CameraState[]; counts: StoreCounts; tasks: Task[] }
 
+const demoHealthyConfidence = 0.95
+
 const cameraNames: Record<string, string> = {
   '6376': 'Citrus & kiwi', '6443': 'Tomatoes', '6462': 'Berries & grapes', '6215': 'Banana island',
   '6594': 'Onions & garlic', '6386': 'Cabbages', '6491': 'Stone fruit', '6591': 'Potatoes',
@@ -46,7 +48,12 @@ export function getDemoStoreSnapshot(now: number, dataset: LabellingState): Stor
       if (!selectedFrame) return { ...details, status: 'unavailable', reason: 'frame-missing' }
       if (area.corners.some(([x, y]) => x < 0 || y < 0 || x > selectedFrame.width || y > selectedFrame.height)) return { ...details, status: 'unavailable', reason: 'area-outside-frame' }
       const areaTasks = frameTasks.filter(task => task.area_id === area.id)
-      const confidence = areaTasks.reduce<number | null>((lowest, task) => task.confidence === null ? lowest : Math.min(lowest ?? 1, task.confidence), null)
+      const estimates = areaTasks.map(task => task.confidence)
+      const confidence = areaTasks.length === 0
+        ? demoHealthyConfidence
+        : estimates.includes(null)
+          ? null
+          : Math.min(...estimates.filter(value => value !== null))
       return { ...details, status: 'available', stock: areaTasks.some(task => task.kind === 'restock') ? 'empty' : areaTasks.some(task => task.kind === 'top-up') ? 'half' : 'full', compliant: !areaTasks.some(task => task.kind === 'move-product'), confidence }
     })
     const tasks = frameTasks.filter(task => areas.some(area => area.id === task.area_id && area.status === 'available'))

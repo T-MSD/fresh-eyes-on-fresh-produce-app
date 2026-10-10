@@ -7,6 +7,7 @@ import ts from 'typescript'
 import { formatTime, getTimeline } from '../src/time.ts'
 import { demoTasks } from '../src/tasks.ts'
 import { getDemoStoreSnapshot } from '../src/store.ts'
+import { isUnsure } from '../src/confidence.ts'
 import { createDevAnnotations, findLabelFrame, labelBackupKey, labelStorageKey, loadLabels, parseLabellingDataset, resetUnreadableLabels, saveLabels } from '../src/labelling.ts'
 
 const area = { id: '6215_7', productId: '11906', productName: 'Laranja', corners: [[1, 1], [9, 1], [9, 9], [1, 9]] }
@@ -65,6 +66,34 @@ test('Tasks and counts change at the selected Frame, and full can be wrong', () 
   const outside = getDemoStoreSnapshot(task.since, dataset([value]))
   assert.equal(outside.cameras[0].areas[0].reason, 'area-outside-frame')
   assert.equal(outside.tasks.length, 0)
+})
+
+test('confidence distinguishes healthy demo Areas and preserves unknown estimates', () => {
+  assert.equal(isUnsure(null), true)
+  assert.equal(isUnsure(0.69), true)
+  assert.equal(isUnsure(0.7), false)
+  assert.equal(isUnsure(0.95), false)
+  const value = camera([frame(100)])
+  const confidence = () => getDemoStoreSnapshot(100, dataset([value])).cameras[0].areas[0].confidence
+  assert.equal(confidence(), 0.95)
+  assert.equal(isUnsure(confidence()), false)
+  const originalLength = demoTasks.length
+  const task = { ...demoTasks[0], camera: '6215', area_id: area.id, since: 100 }
+  try {
+    demoTasks.push({ ...task, id: 'numeric', confidence: 0.9 })
+    assert.equal(confidence(), 0.9)
+    demoTasks.push({ ...task, id: 'unknown', confidence: null })
+    assert.equal(confidence(), null)
+    demoTasks.splice(originalLength, 2,
+      { ...task, id: 'unknown', confidence: null },
+      { ...task, id: 'numeric', confidence: 0.9 })
+    assert.equal(confidence(), null)
+    demoTasks.splice(originalLength, 2,
+      { ...task, id: 'high', confidence: 0.9 },
+      { ...task, id: 'low', confidence: 0.58 })
+    assert.equal(confidence(), 0.58)
+    assert.equal(isUnsure(confidence()), true)
+  } finally { demoTasks.splice(originalLength) }
 })
 
 test('dataset boundary rejects malformed Frames and Areas', () => {
