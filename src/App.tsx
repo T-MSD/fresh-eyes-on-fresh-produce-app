@@ -52,7 +52,7 @@ function TaskBoard({ state, completed, onComplete, onSelect, onVerify }: { state
       <span className="healthy-areas"><Icon name="check" />{state.healthyAreas} areas OK</span>
     </div>
     {state.unavailableAreas > 0 && <p role="status">Some Areas are unavailable at the selected time. Open Store for details.</p>}
-    <div className="task-board">
+    <div className="grid grid-cols-3 items-start gap-5 max-[1100px]:gap-3.5 max-[800px]:grid-cols-1 max-[800px]:gap-[22px]">
       {taskGroups.map(group => {
         const groupTasks = tasks.filter(task => task.kind === group.kind)
         return <section className={`task-group ${group.kind}`} key={group.kind} aria-labelledby={`${group.kind}-heading`}>

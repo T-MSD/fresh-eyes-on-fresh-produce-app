@@ -11,10 +11,10 @@ function LabelForm({ area, saved, canLabel, outside, onSave, onClose }: { area: 
     <h2>Planogram expects {area.productName}</h2>
     {outside && <p className="label-warning" role="status">This Area extends beyond the Frame. Verification is unavailable because it is not fully visible.</p>}
     {saved && <p className="label-hint">Your saved label is selected. Confirm it or change your answers.</p>}
-    <fieldset disabled={!canLabel}><legend>How full is it?</legend><div className="label-options stock-options">
+    <fieldset disabled={!canLabel}><legend>How full is it?</legend><div className="label-options stock-options grid grid-cols-3 gap-2.5">
       {(['empty', 'half', 'full'] as const).map(level => <label key={level} className={stock === level ? 'chosen' : ''}><input type="radio" name="stock" required checked={stock === level} onChange={() => setStock(level)} />{level[0].toUpperCase() + level.slice(1)}</label>)}
     </div></fieldset>
-    <fieldset disabled={!canLabel}><legend>Is it the right product?</legend><div className="label-options compliance-options">
+    <fieldset disabled={!canLabel}><legend>Is it the right product?</legend><div className="label-options grid grid-cols-2 gap-2.5">
       <label className={compliant === true ? 'chosen' : ''}><input type="radio" name="compliance" required checked={compliant === true} onChange={() => setCompliant(true)} />Right product</label>
       <label className={compliant === false ? 'chosen' : ''}><input type="radio" name="compliance" required checked={compliant === false} onChange={() => setCompliant(false)} />Wrong product</label>
     </div></fieldset>
@@ -55,7 +55,7 @@ function LabelVerification({ target, state, onRetry, onClose }: { target: LabelT
   return <div className="labelling-mode">
     <p className="verification-frame-meta">Camera {camera.id} · Area {area.id} · Frame {formatTime(frame.ts)} · {frame.image}</p>
     {labelsState.status === 'error' && <div className="label-warning" role="alert"><p>{labelsState.message}</p><button className="label-skip" onClick={() => setLabelsState(labelsState.reason === 'corrupt' ? resetUnreadableLabels() : loadLabels())}>{labelsState.reason === 'corrupt' ? 'Back up and reset labels' : 'Retry browser storage'}</button></div>}
-    <div className="label-workspace">
+    <div className="grid grid-cols-[minmax(0,2.6fr)_minmax(340px,1fr)] items-start gap-[22px] max-[1100px]:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)] max-[1100px]:gap-4 max-[800px]:grid-cols-1">
       <CameraFrameView key={`${camera.id}/${frame.image}`} camera={camera} frame={frame} selectedAreaId={area.id} onImageReady={setReadyFrame} />
       <section className="label-panel" aria-label="Area label">
         {savedNotice ? <div className="verified-label" role="status"><span aria-hidden="true">✓</span><h2>{savedNotice}</h2><p>Stock level: {saved?.stock} · {saved?.compliant ? 'Right product' : 'Wrong product'}</p><button className="label-save" onClick={onClose}>Back</button><button className="label-skip" onClick={() => setSavedNotice('')}>Edit label</button></div> : <LabelForm key={`${camera.id}/${frame.image}/${area.id}`} area={area} saved={saved} canLabel={!outside && readyFrame === frame.url && labelsState.status === 'ready'} outside={outside} onSave={save} onClose={onClose} />}

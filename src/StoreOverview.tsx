@@ -23,7 +23,7 @@ export function StoreOverview({ state, onSelect }: { state: StoreState; onSelect
   if (state.status === 'error') return <p className="board-message" role="alert">{state.message}</p>
   return <div className="store-overview">
     <h1>Store</h1>
-    <dl className="store-counts">
+    <dl className="store-counts mb-7 grid grid-cols-4 gap-3.5 max-[600px]:grid-cols-2 max-[600px]:gap-2.5">
       <div className="count-empty"><dt><span aria-hidden="true">▱</span> Empty</dt><dd>{state.counts.empty}</dd></div>
       <div className="count-wrong"><dt><span aria-hidden="true">⚠</span> Wrong product</dt><dd>{state.counts.wrong}</dd></div>
       <div className="count-half"><dt><span aria-hidden="true">◩</span> Half</dt><dd>{state.counts.half}</dd></div>
@@ -31,7 +31,7 @@ export function StoreOverview({ state, onSelect }: { state: StoreState; onSelect
     </dl>
     {state.counts.unavailable > 0 && <p className="store-notice" role="status">{state.counts.unavailable} Areas unavailable at the selected time.</p>}
     <h2 className="camera-list-heading">Gondolas, most urgent first</h2>
-    {state.cameras.length === 0 ? <p className="board-message">No Cameras configured. Add a Planogram to see Areas here.</p> : <div className="camera-grid">
+    {state.cameras.length === 0 ? <p className="board-message">No Cameras configured. Add a Planogram to see Areas here.</p> : <div className="grid grid-cols-3 gap-4 max-[1100px]:grid-cols-2 max-[600px]:grid-cols-1 max-[600px]:gap-3">
       {state.cameras.map(camera => <button key={camera.id} className="camera-card" onClick={() => onSelect(camera)}>
         <span className="camera-title">{camera.name}<span className="camera-chevron" aria-hidden="true">›</span></span>
         <span className="camera-meta">Camera {camera.id} · {camera.areas.length} Areas · {camera.frame.status === 'available' ? <>Frame <time>{formatTime(camera.frame.frame.ts)}</time></> : 'Frame missing'}</span>
