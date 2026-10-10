@@ -11,10 +11,10 @@ To explain a flow, a structure or a change, show it: a sketch, a tree, a diagram
 ## Essentials
 
 - **Stack:** React 19, TypeScript 6, Vite 8, Tailwind CSS v4.
-- **Package manager:** `npm`.
-- **Dev server:** `npm run dev` → http://localhost:5173
-- **Build + typecheck:** `npm run build`
-- **Lint:** `npm run lint` (oxlint). This repo uses the oxc toolchain; do not add eslint or prettier.
+- **Package manager:** `pnpm`, pinned in `package.json` (`packageManager`). Never use `npm` or `yarn`; never commit a `package-lock.json`.
+- **Dev server:** `pnpm dev` → http://localhost:5173
+- **Build + typecheck:** `pnpm build`
+- **Lint:** `pnpm lint` (oxlint). This repo uses the oxc toolchain; do not add eslint or prettier.
 - **Env:** `.env` holds `VITE_API_URL`. Read it only through `import.meta.env`, in one module.
 
 ## Domain vocabulary

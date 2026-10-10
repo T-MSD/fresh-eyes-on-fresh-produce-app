@@ -7,19 +7,21 @@ Stack: React 19, TypeScript, Vite, Tailwind CSS v4, oxlint.
 
 ## Setup
 
+Requires [pnpm](https://pnpm.io). With Node's corepack: `corepack enable`.
+
 ```bash
-npm install
-npm run dev       # http://localhost:5173
+pnpm install
+pnpm dev          # http://localhost:5173
 ```
 
 ## Scripts
 
 | Command | Purpose |
 |---|---|
-| `npm run dev` | Dev server with hot reload |
-| `npm run build` | Type-check and build to `dist/` |
-| `npm run preview` | Serve the production build |
-| `npm run lint` | Lint with oxlint |
+| `pnpm dev` | Dev server with hot reload |
+| `pnpm build` | Type-check and build to `dist/` |
+| `pnpm preview` | Serve the production build |
+| `pnpm lint` | Lint with oxlint |
 
 The API lives in
 [fresh-eyes-on-fresh-produce-pipeline](https://github.com/T-MSD/fresh-eyes-on-fresh-produce-pipeline).
