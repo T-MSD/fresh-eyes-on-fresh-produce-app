@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { LabelCamera, LabelFrame } from './labelling'
 import type { StoreArea } from './store'
+import { lowConfidenceThreshold } from './tasks'
 
 export function CameraFrameView({ camera, frame, selectedAreaId, areas, onImageReady }: { camera: LabelCamera; frame: LabelFrame; selectedAreaId?: string; areas?: StoreArea[]; onImageReady?: (url: string) => void }) {
   const [imageState, setImageState] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -19,7 +20,7 @@ export function CameraFrameView({ camera, frame, selectedAreaId, areas, onImageR
       {imageState === 'ready' && camera.areas.map(area => {
         const state = areas?.find(item => item.id === area.id)
         const available = state?.status === 'available'
-        const uncertain = available && (state.confidence === null || state.confidence < 0.7)
+        const uncertain = available && (state.confidence === null || state.confidence < lowConfidenceThreshold)
         const center = area.corners.reduce(([x, y], point) => [x + point[0] / 4, y + point[1] / 4], [0, 0])
         return <g key={area.id}>
           <polygon points={area.corners.map(point => point.join(',')).join(' ')} className={`label-polygon${selectedAreaId === area.id ? ' selected' : ''}${available ? ` camera-stock-${state.stock}${state.compliant ? '' : ' camera-wrong-product'}` : areas ? ' camera-area-unavailable' : ''}${uncertain ? ' camera-uncertain' : ''}`} />

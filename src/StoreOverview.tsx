@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { formatTime } from './time'
+import { lowConfidenceThreshold } from './tasks'
 import { CameraFrameView } from './CameraFrameView'
 import { countAreas, getCameraPlanogram, type CameraState, type StoreArea, type StoreState } from './store'
 
 export function AreaIndicator({ area }: { area: StoreArea }) {
   const available = area.status === 'available'
-  const uncertain = available && (area.confidence === null || area.confidence < 0.7)
+  const uncertain = available && (area.confidence === null || area.confidence < lowConfidenceThreshold)
   const label = available ? `Area ${area.number}: ${area.stock}${area.compliant ? '' : ', wrong product'}${uncertain ? ', low confidence' : ''}` : `Area ${area.number}: ${area.reason === 'area-outside-frame' ? 'outside Frame' : area.reason === 'frame-missing' ? 'Frame missing' : 'no predictions'}`
   return <span className={`area-indicator ${available ? `stock-${area.stock}${area.compliant ? '' : ' wrong-product'}` : 'area-unavailable'}${uncertain ? ' uncertain' : ''}`} title={label} role="img" aria-label={label}>
     {!available ? '?' : !area.compliant ? '⚠' : area.stock === 'empty' ? <span className="empty-slash" /> : area.stock === 'half' ? '½' : '✓'}
@@ -22,7 +23,7 @@ export function StoreOverview({ state, onSelect }: { state: StoreState; onSelect
   if (state.status === 'loading') return <p className="board-message" role="status">Loading Cameras and area predictions…</p>
   if (state.status === 'error') return <p className="board-message" role="alert">{state.message}</p>
   return <div className="store-overview">
-    <h1>Store</h1>
+    <h1 className="page-title">Store</h1>
     <dl className="store-counts mb-7 grid grid-cols-4 gap-3.5 max-[600px]:grid-cols-2 max-[600px]:gap-2.5">
       <div className="count-empty"><dt><span aria-hidden="true">▱</span> Empty</dt><dd>{state.counts.empty}</dd></div>
       <div className="count-wrong"><dt><span aria-hidden="true">⚠</span> Wrong product</dt><dd>{state.counts.wrong}</dd></div>
@@ -61,7 +62,7 @@ export function CameraDialog({ camera, selectedAreaId, origin, onClose, onVerify
     {camera.frame.status === 'available' ? <><p>Frame <time>{formatTime(camera.frame.frame.ts)}</time> · {camera.frame.frame.image}</p><CameraFrameView key={camera.frame.frame.image} camera={getCameraPlanogram(camera)} frame={camera.frame.frame} selectedAreaId={selectedAreaId} areas={camera.areas} /></> : <p className="label-frame-message" role="status">No Frame at or before Now.</p>}
     <ul className="camera-area-list">{camera.areas.map(area => <li key={area.id} className={area.id === selectedAreaId ? 'selected-camera-area' : ''}>
       <AreaIndicator area={area} />
-      <div className="camera-area-copy"><strong>{area.productName}</strong><span>Area {area.number} · {area.status === 'available' ? `${area.stock}${area.compliant ? '' : ' · ⚠ wrong product'}` : area.reason === 'frame-missing' ? 'Frame missing' : area.reason === 'area-outside-frame' ? 'Outside Frame' : 'No predictions'}{area.status === 'available' && (area.confidence === null || area.confidence < 0.7) ? ` · Unsure${area.confidence === null ? '' : ` ${Math.round(area.confidence * 100)}%`}` : ''}</span></div>
+      <div className="camera-area-copy"><strong>{area.productName}</strong><span>Area {area.number} · {area.status === 'available' ? `${area.stock}${area.compliant ? '' : ' · ⚠ wrong product'}` : area.reason === 'frame-missing' ? 'Frame missing' : area.reason === 'area-outside-frame' ? 'Outside Frame' : 'No predictions'}{area.status === 'available' && (area.confidence === null || area.confidence < lowConfidenceThreshold) ? ` · Unsure${area.confidence === null ? '' : ` ${Math.round(area.confidence * 100)}%`}` : ''}</span></div>
       <button className="verify-label-button" onClick={() => onVerify(area.id)} aria-label={`Verify label for ${area.productName}, Area ${area.number}`}>Verify label</button>
     </li>)}</ul>
     <button className="dialog-close" onClick={onClose}>Back to {origin === 'tasks' ? 'Tasks' : 'Store'}</button>

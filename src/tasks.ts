@@ -1,6 +1,8 @@
 export type StockLevel = 'empty' | 'half' | 'full'
 export type TaskKind = 'restock' | 'move-product' | 'top-up'
 
+export const lowConfidenceThreshold = 0.7
+
 type TaskDetails = {
   id: string
   product: string

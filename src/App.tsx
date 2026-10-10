@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { taskGroups, type Task, type TaskKind, type TasksState } from './tasks'
+import { lowConfidenceThreshold, taskGroups, type Task, type TaskKind, type TasksState } from './tasks'
 
 import { CameraDialog, StoreOverview, type CameraSelection } from './StoreOverview'
 import { formatTime, getTimeline } from './time'
@@ -20,7 +20,7 @@ function Icon({ name, className = '' }: { name: 'eye' | 'check' | 'chevron' | Ta
 }
 
 function Confidence({ task }: { task: Task }) {
-  return (task.confidence === null || task.confidence < 0.7)
+  return (task.confidence === null || task.confidence < lowConfidenceThreshold)
     ? <span className="confidence">Unsure{task.confidence === null ? '' : ` · ${Math.round(task.confidence * 100)}%`}</span>
     : null
 }
@@ -31,7 +31,7 @@ function TaskCard({ task, index, onComplete, onSelect, onVerify }: { task: Task;
       <span className="task-number">{index + 1}</span>
       <span className="task-copy">
         <span className="product-name">{task.product}</span>
-        {task.detectedProduct && <span className="detected-product">Shelf shows <strong>{task.detectedProduct}</strong></span>}
+        {task.kind === 'move-product' && <span className="detected-product">Shelf shows <strong>{task.detectedProduct}</strong></span>}
         <span className="task-location">{task.location} · Camera {task.camera} · Area {task.area_id}</span>
         <span className="task-time">since <time>{formatTime(task.since)}</time> <Confidence task={task} /></span>
       </span>
@@ -48,7 +48,7 @@ function TaskBoard({ state, completed, onComplete, onSelect, onVerify }: { state
   const tasks = state.tasks.filter(task => !completed.has(task.id))
   return <>
     <div className="board-heading">
-      <h1>{tasks.length === 0 ? 'All caught up' : `${tasks.length} to do`}</h1>
+      <h1 className="page-title">{tasks.length === 0 ? 'All caught up' : `${tasks.length} to do`}</h1>
       <span className="healthy-areas"><Icon name="check" />{state.healthyAreas} areas OK</span>
     </div>
     {state.unavailableAreas > 0 && <p role="status">Some Areas are unavailable at the selected time. Open Store for details.</p>}
@@ -61,7 +61,7 @@ function TaskBoard({ state, completed, onComplete, onSelect, onVerify }: { state
             <div className="group-copy"><h2 id={`${group.kind}-heading`}>{group.title}</h2><p>{group.description}</p></div>
             <span className="group-count" aria-label={`${groupTasks.length} tasks`}>{groupTasks.length}</span>
           </div>
-          {groupTasks.length > 0 ? <ol>{groupTasks.map((task, index) => <TaskCard key={task.id} task={task} index={index} onComplete={onComplete} onSelect={onSelect} onVerify={onVerify} />)}</ol>
+          {groupTasks.length > 0 ? <ol className="task-list">{groupTasks.map((task, index) => <TaskCard key={task.id} task={task} index={index} onComplete={onComplete} onSelect={onSelect} onVerify={onVerify} />)}</ol>
             : <div className="empty-group"><Icon name="check" /><p>No tasks here</p></div>}
         </section>
       })}
@@ -123,7 +123,7 @@ function App() {
   return <>
     <header className="site-header">
       <a className="brand" href="#tasks" aria-label="Fresh Eyes home"><Icon name="eye" /><span>Fresh Eyes</span></a>
-      <nav aria-label="Main navigation">
+      <nav className="main-navigation" aria-label="Main navigation">
         <a className={`nav-item${view === 'tasks' ? ' active' : ''}`} href="#tasks" aria-current={view === 'tasks' ? 'page' : undefined}>Tasks</a>
         <a className={`nav-item${view === 'store' ? ' active' : ''}`} href="#store" aria-current={view === 'store' ? 'page' : undefined}>Store</a>
       </nav>
@@ -132,18 +132,19 @@ function App() {
     {timeline && <section className="time-bar" aria-label="Frame timeline">
       <label className="current-time" htmlFor="timeline"><span>Now</span><output htmlFor="timeline">{formatTime(now)}</output></label>
       <div className="timeline-control">
-        <input id="timeline" type="range" min={timeline.start} max={timeline.end} step="1" value={now} onChange={event => setSelectedTime(Number(event.target.value))} aria-valuetext={formatTime(now)} style={{ background: `linear-gradient(to right, var(--ink) ${progress}%, #ededed ${progress}%)` }} />
+        <input className="timeline-slider" id="timeline" type="range" min={timeline.start} max={timeline.end} step="1" value={now} onChange={event => setSelectedTime(Number(event.target.value))} aria-valuetext={formatTime(now)} style={{ background: `linear-gradient(to right, var(--ink) ${progress}%, var(--timeline-track) ${progress}%)` }} />
         <div className="timeline-labels"><span>{formatTime(timeline.start)}</span><span>{formatTime(timeline.end)}</span></div>
       </div>
       <button className="jump-latest" onClick={() => setSelectedTime(timeline.end)}>Jump to latest</button>
     </section>}
-    <main id={view}>
+    <main id={view} className="app-page">
       {view === 'store' ? <StoreOverview state={storeState} onSelect={selectCamera} /> : <TaskBoard state={state} completed={completed} onComplete={completeTask} onSelect={selectTask} onVerify={verifyTask} />}
       {labellingDataset.state.status === 'error' && <button className="dialog-close" onClick={labellingDataset.retry}>Retry loading Frames and Planogram</button>}
       {labellingDataset.state.status === 'ready' && !timeline && <p role="status">No Frames available. Add dataset Frames to show a timeline.</p>}
       <p className="demo-note">Design preview · Demo predictions · Labels saved in this browser · Task completion saved for this session</p>
     </main>
-    {lastCompleted && <div className="completion-toast" role="status"><span><Icon name="check" />{lastCompleted.product} marked as done</span><button onClick={undoCompletion}>Undo</button></div>}
+    <div className="sr-only" role="status" aria-atomic="true">{lastCompleted ? `${lastCompleted.product} marked as done` : ''}</div>
+    {lastCompleted && <div className="completion-toast"><span><Icon name="check" />{lastCompleted.product} marked as done</span><button onClick={undoCompletion}>Undo</button></div>}
     {overlay.kind === 'camera' && selectedCamera && <CameraDialog camera={selectedCamera} selectedAreaId={overlay.selection.areaId} origin={overlay.selection.origin} onVerify={areaId => verifyArea(selectedCamera, areaId)} onClose={() => setOverlay({ kind: 'closed' })} />}
     {overlay.kind === 'verification' && <VerifyLabelDialog target={overlay.target} state={labellingDataset.state} onRetry={labellingDataset.retry} onClose={closeVerification} />}
   </>

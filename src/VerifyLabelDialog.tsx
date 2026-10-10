@@ -74,7 +74,7 @@ export function VerifyLabelDialog({ target, state, onRetry, onClose }: { target:
     return () => dialog?.close()
   }, [])
   return <dialog ref={dialogRef} className="area-dialog verification-dialog" onCancel={onClose} aria-labelledby="verification-title">
-    <div className="dialog-heading"><h1 id="verification-title">Verify label</h1><button onClick={onClose} aria-label="Close label verification">×</button></div>
+    <div className="dialog-heading"><h1 className="page-title" id="verification-title">Verify label</h1><button onClick={onClose} aria-label="Close label verification">×</button></div>
     <LabelVerification target={target} state={state} onRetry={onRetry} onClose={onClose} />
   </dialog>
 }

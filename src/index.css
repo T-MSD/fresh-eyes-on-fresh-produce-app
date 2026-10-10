@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 
+@layer base {
 :root {
   font-family: 'Arial', 'Helvetica Neue', sans-serif;
   color: #191c1e;
@@ -9,6 +10,7 @@
   -webkit-font-smoothing: antialiased;
   --ink: #191c1e;
   --muted: #606772;
+  --timeline-track: #ededed;
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
@@ -18,10 +20,13 @@ button { cursor: pointer; }
 button:disabled { cursor: default; }
 a { color: inherit; text-decoration: none; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #6e40c9; outline-offset: 5px; }
+}
+
+@layer components {
 .site-header { height: 76px; padding: 0 4.4%; display: flex; align-items: center; gap: 35px; background: white; border-bottom: 1px solid #dce0dc; }
 .brand { display: flex; align-items: center; gap: 12px; font-size: 23px; font-weight: 800; letter-spacing: -.6px; white-space: nowrap; }
 .brand svg { width: 31px; height: 31px; }
-nav { display: flex; align-self: stretch; gap: 6px; }
+.main-navigation { display: flex; align-self: stretch; gap: 6px; }
 .nav-item { display: flex; align-items: center; padding: 0 15px; position: relative; border: 0; background: none; font-size: 18px; font-weight: 600; color: var(--muted); }
 .nav-item.active { font-weight: 800; color: var(--ink); }
 .nav-item.active::after { content: ''; position: absolute; height: 4px; background: var(--ink); left: 0; right: 0; bottom: 10px; }
@@ -31,15 +36,15 @@ nav { display: flex; align-self: stretch; gap: 6px; }
 .current-time span { color: #5d626a; text-transform: uppercase; font-size: 15px; font-weight: 800; }
 .current-time output { font: 700 34px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1px; }
 .timeline-control { flex: 1; min-width: 0; padding-top: 10px; }
-input[type='range'] { appearance: none; width: 100%; height: 10px; border: 1px solid #b9babb; border-radius: 20px; cursor: pointer; display: block; }
-input[type='range']::-webkit-slider-thumb { appearance: none; width: 19px; height: 19px; background: var(--ink); border-radius: 50%; border: 0; }
-input[type='range']::-moz-range-thumb { width: 19px; height: 19px; background: var(--ink); border-radius: 50%; border: 0; }
+.timeline-slider { appearance: none; width: 100%; height: 10px; border: 1px solid #b9babb; border-radius: 20px; cursor: pointer; display: block; }
+.timeline-slider::-webkit-slider-thumb { appearance: none; width: 19px; height: 19px; background: var(--ink); border-radius: 50%; border: 0; }
+.timeline-slider::-moz-range-thumb { width: 19px; height: 19px; background: var(--ink); border-radius: 50%; border: 0; }
 .timeline-labels { display: flex; justify-content: space-between; margin-top: 18px; font: 600 15px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
 .jump-latest { background: white; border: 1.5px solid var(--ink); border-radius: 30px; font-size: 17px; font-weight: 750; padding: 17px 20px; white-space: nowrap; }
 .jump-latest:hover { background: #f1f3f0; }
-main { padding: 29px 4.4% 36px; max-width: 1800px; margin: auto; }
+.app-page { padding: 29px 4.4% 36px; max-width: 1800px; margin: auto; }
 .board-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 38px; }
-h1 { font-size: 38px; font-weight: 800; line-height: 1.3; letter-spacing: -1px; margin: 0; }
+.page-title { font-size: 38px; font-weight: 800; line-height: 1.3; letter-spacing: -1px; margin: 0; }
 .healthy-areas { color: #197241; display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 750; white-space: nowrap; }
 .healthy-areas svg { width: 21px; }
 .task-group { background: #e7ebe5; border-radius: 25px; padding: 14px 13px 13px; }
@@ -54,7 +59,7 @@ h1 { font-size: 38px; font-weight: 800; line-height: 1.3; letter-spacing: -1px; 
 .group-copy h2, .group-icon { color: var(--accent); }
 .group-icon { background: var(--tint); }
 .group-count { background: white; border-radius: 30px; min-width: 65px; padding: 5px 12px; text-align: center; font-size: 19px; font-weight: 750; line-height: 1; }
-ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.task-list { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .task-card { overflow: hidden; background: white; border: 1px solid #d7ddd5; border-radius: 17px; }
 .task-details { width: 100%; display: flex; text-align: left; align-items: flex-start; gap: 16px; background: white; border: 0; padding: 16px 14px 13px; color: var(--ink); }
 .task-details:hover { background: #fcfdfb; }
@@ -133,7 +138,7 @@ ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: col
 .camera-area-copy strong { font-size: 14px; line-height: 1.35; }
 .camera-area-copy span { font-size: 13px; color: var(--muted); line-height: 1.4; }
 .verification-dialog { width: min(1400px, calc(100% - 32px)); padding: 26px; background: #f3f5f2; }
-.verification-dialog h1 { font-size: 30px; color: var(--ink); }
+.verification-dialog .page-title { font-size: 30px; color: var(--ink); }
 .verification-dialog .verification-frame-meta { margin: 14px 0 22px; color: var(--muted); font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
 .verification-dialog .label-panel h2 { margin: 0 0 24px; }
 .verification-dialog .label-frame { align-self: start; }
@@ -178,8 +183,8 @@ ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: col
 @media (min-width: 1600px) {
   .site-header { height: 85px; }
   .time-bar { padding-top: 19px; padding-bottom: 19px; }
-  main { padding-top: 32px; }
-  h1 { font-size: 42px; }
+  .app-page { padding-top: 32px; }
+  .page-title { font-size: 42px; }
   .board-heading { margin-bottom: 44px; }
   .task-group { padding: 16px 15px 15px; }
   .task-details { padding: 17px 16px 15px; }
@@ -220,9 +225,9 @@ ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: col
   .current-time { flex: 1; }
   .timeline-control { order: 3; flex-basis: 100%; }
   .jump-latest { padding: 12px 18px; font-size: 15px; }
-  main { padding: 25px 22px; }
+  .app-page { padding: 25px 22px; }
   .board-heading { margin-bottom: 25px; }
-  h1 { font-size: 32px; }
+  .page-title { font-size: 32px; }
   .group-heading { margin: 5px 5px 17px; gap: 12px; }
   .group-icon { width: 45px; height: 45px; }
   .group-copy h2 { font-size: 21px; }
@@ -251,14 +256,14 @@ ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: col
   .site-header { height: auto; flex-wrap: wrap; gap: 0; padding: 18px 18px 0; }
   .brand { font-size: 21px; }
   .store-name { font-size: 12px; }
-  nav { order: 3; width: 100%; height: 53px; margin-top: 10px; }
+  .main-navigation { order: 3; width: 100%; height: 53px; margin-top: 10px; }
   .nav-item { padding: 0 16px; font-size: 16px; }
   .nav-item.active::after { bottom: 0; }
   .time-bar { padding: 15px 18px 18px; }
   .current-time output { font-size: 29px; }
   .current-time span { font-size: 12px; }
-  main { padding: 24px 14px 90px; }
-  h1 { font-size: 29px; }
+  .app-page { padding: 24px 14px 90px; }
+  .page-title { font-size: 29px; }
   .healthy-areas { font-size: 14px; gap: 4px; }
   .task-time time { font-size: 15px; }
   .task-details { gap: 8px; }
@@ -269,7 +274,7 @@ ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: col
   .camera-area-list .verify-label-button { margin-left: 28px; }
   .camera-area-copy { flex-basis: calc(100% - 28px); }
   .verification-dialog { width: calc(100% - 20px); padding: 18px 12px; }
-  .verification-dialog h1 { font-size: 25px; }
+  .verification-dialog .page-title { font-size: 25px; }
   .verification-dialog .label-footer { align-items: flex-start; }
   .label-panel { padding: 20px 16px; }
   .label-panel h2 { font-size: 23px; }
@@ -279,4 +284,6 @@ ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: col
 
 @media (max-width: 360px) {
   .stock-options label { flex-direction: column; gap: 5px; }
+}
+
 }
