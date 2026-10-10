@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { formatTime, getDemoSnapshot, taskGroups, timeline, type Task, type TaskKind, type TasksState } from './tasks'
+import { formatTime, getDemoSnapshot, lowConfidenceThreshold, taskGroups, timeline, type Task, type TaskKind, type TasksState } from './tasks'
 
 function Icon({ name, className = '' }: { name: 'eye' | 'check' | 'chevron' | TaskKind; className?: string }) {
   return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -13,7 +13,8 @@ function Icon({ name, className = '' }: { name: 'eye' | 'check' | 'chevron' | Ta
 }
 
 function Confidence({ task }: { task: Task }) {
-  return task.confidence !== null && task.confidence < 0.7
+  if (task.confidence === null) return <span className="confidence">Unsure</span>
+  return task.confidence < lowConfidenceThreshold
     ? <span className="confidence">Unsure · {Math.round(task.confidence * 100)}%</span>
     : null
 }
@@ -24,7 +25,7 @@ function TaskCard({ task, index, onComplete, onSelect }: { task: Task; index: nu
       <span className="task-number">{index + 1}</span>
       <span className="task-copy">
         <span className="product-name">{task.product}</span>
-        {task.detectedProduct && <span className="detected-product">Shelf shows <strong>{task.detectedProduct}</strong></span>}
+        {task.kind === 'move-product' && <span className="detected-product">Shelf shows <strong>{task.detectedProduct}</strong></span>}
         <span className="task-location">{task.location} · Camera {task.camera} · Area {task.area}</span>
         <span className="task-time">since <time>{formatTime(task.since)}</time> <Confidence task={task} /></span>
       </span>
@@ -40,7 +41,7 @@ function TaskBoard({ state, completed, onComplete, onSelect }: { state: TasksSta
   const tasks = state.tasks.filter(task => !completed.has(task.id))
   return <>
     <div className="board-heading">
-      <h1>{tasks.length === 0 ? 'All caught up' : `${tasks.length} to do`}</h1>
+      <h1 className="board-title">{tasks.length === 0 ? 'All caught up' : `${tasks.length} to do`}</h1>
       <span className="healthy-areas"><Icon name="check" />{state.healthyAreas} areas OK</span>
     </div>
     {state.unavailableAreas > 0 && <p role="status">Some areas have no predictions yet. Their status is unavailable.</p>}
@@ -53,7 +54,7 @@ function TaskBoard({ state, completed, onComplete, onSelect }: { state: TasksSta
             <div className="group-copy"><h2 id={`${group.kind}-heading`}>{group.title}</h2><p>{group.description}</p></div>
             <span className="group-count" aria-label={`${groupTasks.length} tasks`}>{groupTasks.length}</span>
           </div>
-          {groupTasks.length > 0 ? <ol>{groupTasks.map((task, index) => <TaskCard key={task.id} task={task} index={index} onComplete={onComplete} onSelect={onSelect} />)}</ol>
+          {groupTasks.length > 0 ? <ol className="task-list">{groupTasks.map((task, index) => <TaskCard key={task.id} task={task} index={index} onComplete={onComplete} onSelect={onSelect} />)}</ol>
             : <div className="empty-group"><Icon name="check" /><p>No tasks here</p></div>}
         </section>
       })}
@@ -73,7 +74,7 @@ function TaskDialog({ task, onClose }: { task: Task; onClose: () => void }) {
     <h2 id="area-dialog-title">{task.product}</h2>
     <p>{task.location}</p>
     <div className={`dialog-action ${task.kind}`}><Icon name={task.kind} /><strong>{taskGroups.find(group => group.kind === task.kind)?.title}</strong></div>
-    {task.detectedProduct && <p>Shelf shows <strong>{task.detectedProduct}</strong>.</p>}
+    {task.kind === 'move-product' && <p>Shelf shows <strong>{task.detectedProduct}</strong>.</p>}
     <p>Since {formatTime(task.since)} <Confidence task={task} /></p>
     <div className="frame-placeholder">Camera frame unavailable in this demo. The camera view will highlight this area once connected.</div>
     <button className="dialog-close" onClick={onClose}>Back to tasks</button>
@@ -106,23 +107,24 @@ function App() {
   return <>
     <header className="site-header">
       <a className="brand" href="#tasks" aria-label="Fresh Eyes home"><Icon name="eye" /><span>Fresh Eyes</span></a>
-      <nav aria-label="Main navigation">
+      <nav className="main-navigation" aria-label="Main navigation">
         <a className="nav-item active" href="#tasks" aria-current="page">Tasks</a>
-        <button className="nav-item" disabled title="Store overview is coming next">Store</button>
-        <button className="nav-item" disabled title="Labelling mode is coming next">Label</button>
+        <button className="nav-item" disabled>Store<span className="coming-soon">Coming soon</span></button>
+        <button className="nav-item" disabled>Label<span className="coming-soon">Coming soon</span></button>
       </nav>
       <span className="store-name">Frutas e Legumes</span>
     </header>
     <section className="time-bar" aria-label="Frame timeline">
       <label className="current-time" htmlFor="timeline"><span>Now</span><output htmlFor="timeline">{formatTime(now)}</output></label>
       <div className="timeline-control">
-        <input id="timeline" type="range" min={timeline.start} max={timeline.end} value={now} onChange={event => setNow(Number(event.target.value))} aria-valuetext={formatTime(now)} style={{ background: `linear-gradient(to right, var(--ink) ${progress}%, #ededed ${progress}%)` }} />
+        <input id="timeline" className="timeline-slider" type="range" min={timeline.start} max={timeline.end} value={now} onChange={event => setNow(Number(event.target.value))} aria-valuetext={formatTime(now)} style={{ background: `linear-gradient(to right, var(--ink) ${progress}%, var(--timeline-track) ${progress}%)` }} />
         <div className="timeline-labels"><span>{formatTime(timeline.start)}</span><span>{formatTime(timeline.end)}</span></div>
       </div>
       <button className="jump-latest" onClick={() => setNow(timeline.end)}>Jump to latest</button>
     </section>
-    <main id="tasks"><TaskBoard state={state} completed={completed} onComplete={completeTask} onSelect={setSelectedTask} /><p className="demo-note">Design preview · Demo data · Task completion is saved for this session only</p></main>
-    {lastCompleted && <div className="completion-toast" role="status"><span><Icon name="check" />{lastCompleted.product} marked as done</span><button onClick={undoCompletion}>Undo</button></div>}
+    <main id="tasks" className="tasks-page"><TaskBoard state={state} completed={completed} onComplete={completeTask} onSelect={setSelectedTask} /><p className="demo-note">Design preview · Demo data · Task completion is saved for this session only</p></main>
+    <div className="completion-announcement" role="status" aria-atomic="true">{lastCompleted ? `${lastCompleted.product} marked as done` : ''}</div>
+    {lastCompleted && <div className="completion-toast"><span><Icon name="check" />{lastCompleted.product} marked as done</span><button onClick={undoCompletion}>Undo</button></div>}
     {selectedTask && <TaskDialog task={selectedTask} onClose={() => setSelectedTask(null)} />}
   </>
 }

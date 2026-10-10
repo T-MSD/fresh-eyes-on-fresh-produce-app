@@ -16,17 +16,22 @@ export type Prediction = {
   stock_confidence: number | null
 }
 
-export type Task = {
+type TaskBase = {
   id: string
-  kind: TaskKind
   product: string
   location: string
   camera: string
   area: number
   since: number
   confidence: number | null
-  detectedProduct?: string
 }
+
+export type Task =
+  | (TaskBase & { kind: 'restock' | 'top-up'; detectedProduct?: never })
+  | (TaskBase & { kind: 'move-product'; detectedProduct: string })
+
+export const lowConfidenceThreshold = 0.7
+const demoAreaCount = 152
 
 export type AreaState =
   | { status: 'available'; stock: StockLevel; compliant: boolean }
@@ -64,5 +69,5 @@ export function formatTime(minutes: number) {
 
 export function getDemoSnapshot(now: number): TasksState {
   const tasks = demoTasks.filter(task => task.since <= now)
-  return { status: 'ready', tasks, healthyAreas: 152 - tasks.length, unavailableAreas: 0 }
+  return { status: 'ready', tasks, healthyAreas: demoAreaCount - tasks.length, unavailableAreas: 0 }
 }
