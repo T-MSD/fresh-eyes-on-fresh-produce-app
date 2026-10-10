@@ -27,3 +27,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+public/label-frames/
+public/labelling-dataset.json
