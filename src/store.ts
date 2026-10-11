@@ -2,7 +2,7 @@ import { demoTasks, type StockLevel, type Task } from './tasks.ts'
 import { findLabelFrame, type LabelArea, type LabelCamera, type LabelFrame, type LabellingState } from './labelling.ts'
 
 export type StoreArea = LabelArea & { number: string } & (
-  | { status: 'available'; stock: StockLevel; compliant: boolean; confidence: number | null }
+  | { status: 'available'; stock: StockLevel; compliant: boolean; confidence: number | null; detectedProductName?: string | null }
   | { status: 'unavailable'; reason: 'no-predictions' | 'frame-missing' | 'area-outside-frame' }
 )
 

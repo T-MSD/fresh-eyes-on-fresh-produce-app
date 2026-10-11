@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 import { formatTime } from './time'
 import { isUnsure } from './confidence'
 import { CameraFrameView } from './CameraFrameView'
@@ -48,7 +49,7 @@ export function StoreOverview({ state, onSelect }: { state: StoreState; onSelect
 
 export type CameraSelection = { cameraId: string; areaId?: string; origin: 'tasks' | 'store' }
 
-export function CameraDialog({ camera, selectedAreaId, origin, onClose, onVerify }: { camera: CameraState; selectedAreaId?: string; origin: 'tasks' | 'store'; onClose: () => void; onVerify: (areaId: string) => void }) {
+export function CameraDialog({ camera, selectedAreaId, origin, onClose, onVerify, children }: { camera: CameraState; selectedAreaId?: string; origin: 'tasks' | 'store'; onClose: () => void; onVerify: (areaId: string) => void; children?: ReactNode }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const dialog = dialogRef.current
@@ -64,7 +65,9 @@ export function CameraDialog({ camera, selectedAreaId, origin, onClose, onVerify
       <AreaIndicator area={area} />
       <div className="camera-area-copy"><strong>{area.productName}</strong><span>Area {area.number} · {area.status === 'available' ? `${area.stock}${area.compliant ? '' : ' · ⚠ wrong product'}` : area.reason === 'frame-missing' ? 'Frame missing' : area.reason === 'area-outside-frame' ? 'Outside Frame' : 'No predictions'}{area.status === 'available' && isUnsure(area.confidence) ? ` · Unsure${area.confidence === null ? '' : ` ${Math.round(area.confidence * 100)}%`}` : ''}</span></div>
       <button className="verify-label-button" onClick={() => onVerify(area.id)} aria-label={`Verify label for ${area.productName}, Area ${area.number}`}>Verify label</button>
+      {area.status === 'available' && !area.compliant && area.detectedProductName && <span>Shelf shows {area.detectedProductName}</span>}
     </li>)}</ul>
+    {children}
     <button className="dialog-close" onClick={onClose}>Back to {origin === 'tasks' ? 'Tasks' : 'Store'}</button>
   </dialog>
 }

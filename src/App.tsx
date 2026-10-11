@@ -1,4 +1,6 @@
 import { isUnsure } from './confidence'
+import { ApiCameraDialog } from './ApiCameraDialog'
+import { cameraApiEnabled } from './cameraApi'
 import { useEffect, useState } from 'react'
 import { taskGroups, type Task, type TaskKind, type TasksState } from './tasks'
 
@@ -146,7 +148,7 @@ function App() {
     </main>
     <div className="sr-only" role="status" aria-atomic="true">{lastCompleted ? `${lastCompleted.product} marked as done` : ''}</div>
     {lastCompleted && <div className="completion-toast"><span><Icon name="check" />{lastCompleted.product} marked as done</span><button onClick={undoCompletion}>Undo</button></div>}
-    {overlay.kind === 'camera' && selectedCamera && <CameraDialog camera={selectedCamera} selectedAreaId={overlay.selection.areaId} origin={overlay.selection.origin} onVerify={areaId => verifyArea(selectedCamera, areaId)} onClose={() => setOverlay({ kind: 'closed' })} />}
+    {overlay.kind === 'camera' && (cameraApiEnabled ? <ApiCameraDialog key={`${overlay.selection.cameraId}/${now}`} cameraId={overlay.selection.cameraId} now={now} selectedAreaId={overlay.selection.areaId} origin={overlay.selection.origin} onVerify={areaId => setOverlay({ kind: 'verification', target: { cameraId: overlay.selection.cameraId, areaId, now }, returnTo: overlay.selection })} onClose={() => setOverlay({ kind: 'closed' })} /> : selectedCamera && <CameraDialog camera={selectedCamera} selectedAreaId={overlay.selection.areaId} origin={overlay.selection.origin} onVerify={areaId => verifyArea(selectedCamera, areaId)} onClose={() => setOverlay({ kind: 'closed' })} />)}
     {overlay.kind === 'verification' && <VerifyLabelDialog target={overlay.target} state={labellingDataset.state} onRetry={labellingDataset.retry} onClose={closeVerification} />}
   </>
 }
