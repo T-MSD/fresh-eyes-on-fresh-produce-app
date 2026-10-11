@@ -85,8 +85,8 @@ export function CameraPage({ camera, initialAreaId, origin, now, hiddenTaskIds, 
     <div className="camera-page-heading">
       <a className="back-link" href={`#${origin}`}><Icon name="back" />{origin === 'tasks' ? 'Tasks' : 'Store'}</a>
       <div className="camera-page-title">
-        <h1>{camera.name}</h1>
-        <p>Camera {camera.id} · {ts === null ? 'no Frame at Now' : <>frame taken <time>{formatTime(ts)}</time></>}</p>
+        <h1>Camera {camera.id}</h1>
+        <p>{ts === null ? 'No Frame at Now' : <>Frame taken <time>{formatTime(ts)}</time></>}</p>
       </div>
       <SummaryPills camera={camera} />
     </div>

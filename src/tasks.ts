@@ -7,7 +7,6 @@ export type TaskRecord = { camera: string; areaId: string; productId: string; pr
 type TaskDetails = {
   id: string
   product: string
-  location: string
   camera: string
   area_id: string
   openedImage: string

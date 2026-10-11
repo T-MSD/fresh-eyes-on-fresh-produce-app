@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import ts from 'typescript'
 import { formatTime } from '../src/time.ts'
 import { isOpenAt } from '../src/tasks.ts'
-import { buildStoreSnapshot, cameraName } from '../src/store.ts'
+import { buildStoreSnapshot } from '../src/store.ts'
 import { isUnsure } from '../src/confidence.ts'
 import { parseAreaStock, parseCameraFrame, parseCameras, parseHourRange, parseTasks } from '../src/api.ts'
 import { describeArea, openingArea } from '../src/areaDisplay.ts'
@@ -110,21 +110,11 @@ test('Tasks and counts follow Now, and a full Area can hold the wrong product', 
   assert.equal(open.tasks[0].kind, 'move-product')
   assert.equal(open.tasks[0].detectedProduct, 'Banana')
   assert.equal(open.tasks[0].confidence, 0.58)
-  assert.equal(open.tasks[0].location, 'Laranja')
   assert.equal(open.cameras[0].areas[0].stock, 'full')
   assert.equal(open.cameras[0].areas[0].compliant, false)
   assert.equal(open.counts.wrong, 1)
   assert.equal(open.counts.ok, 0)
   assert.equal(snapshot(200, wrong, tasks).tasks.length, 0)
-})
-
-test('Camera name comes from the API, else from its most common Planogram products', () => {
-  const areas = names => names.map((productName, index) => ({ ...planogram.areas[0], id: `6215_${index + 1}`, number: index + 1, productName }))
-  assert.equal(cameraName({ id: '6215', name: null, areas: areas(['CITRINOS DO ALGARVE KG', 'BANANA CAT I CNT KG', 'BANANA DA MADEIRA CNT KG', 'CITRINOS LIMA KG', 'BANANA BIO KG', 'MAÇA GOLDEN 1 KG']) }), 'Banana · Citrinos')
-  assert.equal(cameraName({ id: '6385', name: null, areas: areas(['MACA FUJI KG', 'MAÇÃ GALA KG', 'MAÇÃ REINETA KG', 'PERA ROCHA KG', 'PERA CONFERENCE KG']) }), 'Maçã · Pera')
-  assert.equal(cameraName({ id: '6443', name: null, areas: areas(['TOMATE REDONDO KG', 'TOMATE CACHO KG', 'MINI TOMATE CACHO 500G']) }), 'Tomate')
-  assert.equal(cameraName({ id: '6215', name: 'Front gondola', areas: areas(['BANANA CAT I CNT KG']) }), 'Front gondola')
-  assert.equal(cameraName({ id: '6383', name: null, areas: [] }), 'Camera 6383')
 })
 
 test('missing Frames, failed Cameras and missing predictions mark Areas unavailable', () => {
@@ -191,7 +181,7 @@ test('Task and Frame types reject contradictory states', () => {
   try {
     const file = join(directory, 'invalid.ts')
     const taskPath = resolve('src/tasks.ts'), storePath = resolve('src/store.ts')
-    writeFileSync(file, `import type { Task } from ${JSON.stringify(taskPath)}\nimport type { CameraFrame } from ${JSON.stringify(storePath)}\nconst details = { id: 'x', product: 'x', location: 'x', camera: '6215', area_id: '6215_7', openedImage: '1.jpg', since: 1, confidence: null }\nconst missingProduct: Task = { ...details, kind: 'move-product' }\nconst extraProduct: Task = { ...details, kind: 'restock', detectedProduct: 'x' }\nconst missingFrame: CameraFrame = { status: 'missing', stale: true }\n`)
+    writeFileSync(file, `import type { Task } from ${JSON.stringify(taskPath)}\nimport type { CameraFrame } from ${JSON.stringify(storePath)}\nconst details = { id: 'x', product: 'x', camera: '6215', area_id: '6215_7', openedImage: '1.jpg', since: 1, confidence: null }\nconst missingProduct: Task = { ...details, kind: 'move-product' }\nconst extraProduct: Task = { ...details, kind: 'restock', detectedProduct: 'x' }\nconst missingFrame: CameraFrame = { status: 'missing', stale: true }\n`)
     const program = ts.createProgram([file], { noEmit: true, skipLibCheck: true, allowImportingTsExtensions: true, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, target: ts.ScriptTarget.ES2023, types: [] })
     const errors = ts.getPreEmitDiagnostics(program).filter(diagnostic => diagnostic.file?.fileName === file)
     assert.equal(errors.length, 3, errors.map(error => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n'))

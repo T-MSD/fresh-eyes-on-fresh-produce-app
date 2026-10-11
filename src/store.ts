@@ -12,7 +12,7 @@ export type CameraFrame =
   | { status: 'missing' }
   | { status: 'failed' }
 export type CameraReading = { status: 'found'; reading: CameraFrameReading } | { status: 'no-frame' } | { status: 'failed' }
-export type CameraState = { id: string; name: string; frame: CameraFrame; areas: StoreArea[]; tasks: Task[] }
+export type CameraState = { id: string; frame: CameraFrame; areas: StoreArea[]; tasks: Task[] }
 export type StoreCounts = { empty: number; wrong: number; half: number; ok: number; unavailable: number }
 export type StoreSnapshot = { status: 'ready'; now: number; cameras: CameraState[]; counts: StoreCounts; tasks: Task[] }
 export type StoreState =
@@ -22,9 +22,6 @@ export type StoreState =
   | StoreSnapshot
 
 const staleAfterSeconds = 30 * 60
-
-const productsInCameraName = 2
-const minimumAreasForSecondaryProduct = 2
 
 export function countAreas(areas: StoreArea[]): StoreCounts {
   const counts: StoreCounts = { empty: 0, wrong: 0, half: 0, ok: 0, unavailable: 0 }
@@ -43,41 +40,13 @@ function urgency(camera: CameraState): number {
   return counts.empty > 0 ? 0 : counts.wrong > 0 ? 1 : counts.half > 0 ? 2 : 3
 }
 
-function productWord(productName: string): string {
-  const word = productName.trim().split(/\s+/)[0].toLocaleLowerCase('pt-PT')
-  return word.charAt(0).toLocaleUpperCase('pt-PT') + word.slice(1)
-}
-
-/** The API's Camera name, else the Camera's most common Planogram products, e.g. "Banana · Citrinos". */
-export function cameraName(planogram: CameraPlanogram): string {
-  if (planogram.name) return planogram.name
-  const spellingsPerProduct = new Map<string, Map<string, number>>()
-  for (const area of planogram.areas) {
-    const word = productWord(area.productName)
-    const key = word.normalize('NFD').replace(/\p{M}/gu, '')
-    const spellings = spellingsPerProduct.get(key) ?? new Map<string, number>()
-    spellings.set(word, (spellings.get(word) ?? 0) + 1)
-    spellingsPerProduct.set(key, spellings)
-  }
-  const products = [...spellingsPerProduct.values()]
-    .map(spellings => {
-      const counts = [...spellings]
-      return { word: counts.reduce((best, current) => current[1] > best[1] ? current : best)[0], areas: counts.reduce((total, [, areas]) => total + areas, 0) }
-    })
-    .sort((left, right) => right.areas - left.areas)
-    .filter((product, index) => index === 0 || product.areas >= minimumAreasForSecondaryProduct)
-    .slice(0, productsInCameraName)
-    .map(product => product.word)
-  return products.length ? products.join(' · ') : `Camera ${planogram.id}`
-}
-
 function combinedConfidence(prediction: AreaPrediction): number | null {
   if (prediction.stockConfidence === null || prediction.complianceConfidence === null) return null
   return Math.min(prediction.stockConfidence, prediction.complianceConfidence)
 }
 
-function toTask(record: TaskRecord, location: string, prediction: AreaPrediction | undefined): Task {
-  const details = { id: getTaskId(record), product: record.productName, location, camera: record.camera, area_id: record.areaId, openedImage: record.opened.image, since: record.opened.ts }
+function toTask(record: TaskRecord, prediction: AreaPrediction | undefined): Task {
+  const details = { id: getTaskId(record), product: record.productName, camera: record.camera, area_id: record.areaId, openedImage: record.opened.image, since: record.opened.ts }
   if (record.kind === 'move-product') return { ...details, kind: record.kind, detectedProduct: prediction?.detectedProductName ?? null, confidence: prediction?.complianceConfidence ?? null }
   return { ...details, kind: record.kind, confidence: prediction?.stockConfidence ?? null }
 }
@@ -102,12 +71,12 @@ export function buildStoreSnapshot(now: number, planograms: CameraPlanogram[], r
     const planogram = planograms.find(camera => camera.id === record.camera)
     if (!planogram) return []
     const reading = readings.get(planogram.id)
-    return [toTask(record, cameraName(planogram), reading?.status === 'found' ? reading.reading.predictions.get(record.areaId) : undefined)]
+    return [toTask(record, reading?.status === 'found' ? reading.reading.predictions.get(record.areaId) : undefined)]
   })
   const cameras = planograms.map((planogram): CameraState => {
     const reading = readings.get(planogram.id) ?? { status: 'failed' }
     const areas = (reading.status === 'found' ? reading.reading.camera.areas : planogram.areas).map(area => toStoreArea(area, reading))
-    return { id: planogram.id, name: cameraName(planogram), frame: toCameraFrame(reading, now), areas, tasks: tasks.filter(task => task.camera === planogram.id) }
+    return { id: planogram.id, frame: toCameraFrame(reading, now), areas, tasks: tasks.filter(task => task.camera === planogram.id) }
   })
   cameras.sort((left, right) => urgency(left) - urgency(right))
   return { status: 'ready', now, cameras, counts: countAreas(cameras.flatMap(camera => camera.areas)), tasks }

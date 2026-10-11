@@ -24,7 +24,7 @@ function TaskCard({ task, index, onComplete, onSelect, onVerify }: { task: Task;
       <span className="task-copy">
         <span className="product-name">{task.product}</span>
         {task.kind === 'move-product' && <span className="detected-product">{task.detectedProduct ? <>Shelf shows <strong>{task.detectedProduct}</strong></> : 'Shelf shows another product'}</span>}
-        <span className="task-location">{task.location} · Camera {task.camera} · Area {task.area_id}</span>
+        <span className="task-location">Camera {task.camera} · Area {task.area_id}</span>
         <span className="task-time">since <time>{formatTime(task.since)}</time> <Confidence task={task} /></span>
       </span>
       <Icon name="chevron" className="task-chevron" />

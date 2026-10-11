@@ -68,8 +68,8 @@ export function StoreOverview({ state, onSelect, onRetry }: { state: StoreSnapsh
     <h2 className="camera-list-heading">Gondolas, most urgent first</h2>
     {state.cameras.length === 0 ? <p className="board-message">The latest analysis run has no Cameras.</p> : <div className="grid grid-cols-3 gap-4 max-[1100px]:grid-cols-2 max-[600px]:grid-cols-1 max-[600px]:gap-3">
       {state.cameras.map(camera => <button key={camera.id} className="camera-card" onClick={() => onSelect(camera)}>
-        <span className="camera-title">{camera.name}<span className="camera-chevron" aria-hidden="true">›</span></span>
-        <span className="camera-meta">Camera {camera.id} · {camera.areas.length} Areas · <FrameTime frame={camera.frame} /></span>
+        <span className="camera-title">Camera {camera.id}<span className="camera-chevron" aria-hidden="true">›</span></span>
+        <span className="camera-meta">{camera.areas.length} Areas · <FrameTime frame={camera.frame} /></span>
         <span className="area-indicators">{camera.areas.map(area => <AreaIndicator key={area.id} area={area} />)}</span>
         <CameraSummary camera={camera} />
         <FrameNotice camera={camera} />
