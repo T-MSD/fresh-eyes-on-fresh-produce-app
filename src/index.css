@@ -241,6 +241,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .stock-today-message { margin: 0; min-height: 46px; color: var(--muted); font-size: 14px; }
 .area-panel-done, .area-panel-verify { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border-radius: 12px; font-size: 16px; font-weight: 800; }
 .area-panel-done { margin-top: 22px; background: var(--ink); color: white; border: 1px solid var(--ink); }
+.area-panel-done + .area-panel-done { margin-top: 10px; }
 .area-panel-done svg { width: 19px; height: 19px; }
 .area-panel-verify { margin-top: 10px; background: white; color: var(--ink); border: 1px solid #b9bfb8; }
 .area-panel-verify:hover { background: #f3f5f2; }

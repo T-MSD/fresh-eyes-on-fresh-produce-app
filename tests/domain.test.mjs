@@ -9,7 +9,7 @@ import { isOpenAt } from '../src/tasks.ts'
 import { buildStoreSnapshot, cameraName } from '../src/store.ts'
 import { isUnsure } from '../src/confidence.ts'
 import { parseAreaStock, parseCameraFrame, parseCameras, parseHourRange, parseTasks } from '../src/api.ts'
-import { describeArea, mostUrgentArea } from '../src/areaDisplay.ts'
+import { describeArea, openingArea } from '../src/areaDisplay.ts'
 import { createDevAnnotations, labelBackupKey, labelStorageKey, loadLabels, resetUnreadableLabels, saveLabels } from '../src/labelling.ts'
 
 const imageUrl = (camera, image) => `http://api.test/images/${camera}/${image}`
@@ -89,13 +89,16 @@ test('stock history is sorted by time and keeps unknown confidence', () => {
   assert.throws(() => parseAreaStock({ readings: [] }))
 })
 
-test('Camera view opens on the most urgent Area and describes each Area in words', () => {
+test('Camera view opens on the requested Area, else the most urgent one, and describes each Area in words', () => {
   const areas = snapshot(100, found(apiFrame(100, { areas: [
     apiArea(),
     apiArea({ area_id: '6215_8', number: 8, prediction: apiPrediction({ stock_level: 'half', planogram_compliant: false, stock_confidence: null }) }),
     apiArea({ area_id: '6215_9', number: 9, prediction: null }),
   ] }))).cameras[0].areas
-  assert.equal(mostUrgentArea(areas).id, '6215_8')
+  assert.equal(openingArea(areas, null)?.id, '6215_8')
+  assert.equal(openingArea(areas, '6215_9')?.id, '6215_9')
+  assert.equal(openingArea(areas, '6376_1')?.id, '6215_8')
+  assert.equal(openingArea([], '6215_9'), undefined)
   assert.deepEqual(areas.map(describeArea), ['Full', 'Half · wrong product · unsure', 'No prediction'])
 })
 

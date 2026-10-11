@@ -24,7 +24,7 @@ export function formatConfidence(confidence: number | null): string {
 
 const urgency = (area: StoreArea) => area.status === 'unavailable' ? 4 : area.stock === 'empty' ? 0 : !area.compliant ? 1 : area.stock === 'half' ? 2 : 3
 
-/** The Area to show first: the most urgent one, in Area order. */
-export function mostUrgentArea(areas: StoreArea[]): StoreArea | undefined {
-  return [...areas].sort((left, right) => urgency(left) - urgency(right))[0]
+/** The Area to show first: the requested one when the Camera has it, else the most urgent one, in Area order. */
+export function openingArea(areas: StoreArea[], requestedAreaId: string | null): StoreArea | undefined {
+  return areas.find(area => area.id === requestedAreaId) ?? [...areas].sort((left, right) => urgency(left) - urgency(right))[0]
 }

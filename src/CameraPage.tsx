@@ -4,9 +4,9 @@ import { isUnsure } from './confidence'
 import { Icon } from './Icon'
 import { CameraFrameView } from './CameraFrameView'
 import { countAreas, type CameraState, type StoreArea } from './store'
-import type { Task } from './tasks'
+import { taskGroups, type Task } from './tasks'
 import { useAreaStock } from './useAreaStock'
-import { describeArea, formatConfidence, mostUrgentArea, stockIcons, stockLabels, unavailableAreaLabels } from './areaDisplay'
+import { describeArea, formatConfidence, openingArea, stockIcons, stockLabels, unavailableAreaLabels } from './areaDisplay'
 
 export type CameraOrigin = 'tasks' | 'store'
 
@@ -53,7 +53,7 @@ function StockToday({ areaId, now }: { areaId: string; now: number }) {
   </figure>
 }
 
-function AreaPanel({ area, task, now, onComplete, onVerify }: { area: StoreArea; task: Task | undefined; now: number; onComplete: (task: Task) => void; onVerify: (areaId: string) => void }) {
+function AreaPanel({ area, tasks, now, onComplete, onVerify }: { area: StoreArea; tasks: Task[]; now: number; onComplete: (task: Task) => void; onVerify: (areaId: string) => void }) {
   return <section className="area-panel" aria-labelledby="area-panel-title">
     <p className="area-panel-id">Area {area.id}</p>
     <h2 id="area-panel-title">{area.productName}</h2>
@@ -71,15 +71,15 @@ function AreaPanel({ area, task, now, onComplete, onVerify }: { area: StoreArea;
     </div> : <p className="area-panel-unavailable" role="status">{unavailableAreaLabels[area.reason]} at the selected time.</p>}
     <h3 className="area-panel-heading">Stock today</h3>
     <StockToday areaId={area.id} now={now} />
-    {task && <button className="area-panel-done" onClick={() => onComplete(task)}><Icon name="check" />Mark as done</button>}
+    {taskGroups.flatMap(group => tasks.filter(task => task.kind === group.kind).map(task => <button key={task.id} className="area-panel-done" onClick={() => onComplete(task)}><Icon name="check" />Mark {group.title.toLowerCase()} as done</button>))}
     <button className="area-panel-verify" onClick={() => onVerify(area.id)}>Not right?</button>
   </section>
 }
 
 export function CameraPage({ camera, initialAreaId, origin, now, hiddenTaskIds, onComplete, onVerify }: { camera: CameraState; initialAreaId: string | null; origin: CameraOrigin; now: number; hiddenTaskIds: ReadonlySet<string>; onComplete: (task: Task) => void; onVerify: (areaId: string) => void }) {
-  const [selectedAreaId, setSelectedAreaId] = useState(initialAreaId ?? mostUrgentArea(camera.areas)?.id)
+  const [selectedAreaId, setSelectedAreaId] = useState(() => openingArea(camera.areas, initialAreaId)?.id)
   const selectedArea = camera.areas.find(area => area.id === selectedAreaId)
-  const task = camera.tasks.find(task => task.area_id === selectedAreaId && !hiddenTaskIds.has(task.id))
+  const tasks = camera.tasks.filter(task => task.area_id === selectedAreaId && !hiddenTaskIds.has(task.id))
   const ts = frameTime(camera)
   return <div className="camera-page">
     <div className="camera-page-heading">
@@ -101,7 +101,7 @@ export function CameraPage({ camera, initialAreaId, origin, now, hiddenTaskIds, 
           <span><span className="legend-dashed" aria-hidden="true" />Unsure (dashed)</span>
         </div>
       </section>
-      {selectedArea ? <AreaPanel key={selectedArea.id} area={selectedArea} task={task} now={now} onComplete={onComplete} onVerify={onVerify} /> : <section className="area-panel"><p>This Camera has no Planogram Areas.</p></section>}
+      {selectedArea ? <AreaPanel key={selectedArea.id} area={selectedArea} tasks={tasks} now={now} onComplete={onComplete} onVerify={onVerify} /> : <section className="area-panel"><p>This Camera has no Planogram Areas.</p></section>}
     </div>
     {camera.areas.length > 0 && <>
       <h2 className="camera-areas-heading">All areas on this camera</h2>
