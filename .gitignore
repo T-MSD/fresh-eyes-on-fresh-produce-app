@@ -28,5 +28,3 @@ dist-ssr
 *.sln
 *.sw?
 
-public/label-frames/
-public/labelling-dataset.json
