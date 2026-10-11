@@ -2,7 +2,7 @@ import { getTaskId, isOpenAt, type StockLevel, type Task, type TaskRecord } from
 import type { AreaPrediction, CameraFrameReading, CameraPlanogram, Frame, PlanogramArea } from './camera.ts'
 
 export type StoreArea = PlanogramArea & (
-  | { status: 'available'; stock: StockLevel; compliant: boolean; detectedProductName: string | null; confidence: number | null }
+  | { status: 'available'; stock: StockLevel; compliant: boolean; detectedProductName: string | null; stockConfidence: number | null; complianceConfidence: number | null; confidence: number | null }
   | { status: 'unavailable'; reason: 'no-prediction' | 'frame-missing' | 'camera-failed' }
 )
 
@@ -93,7 +93,7 @@ function toStoreArea(area: PlanogramArea, reading: CameraReading): StoreArea {
   if (reading.status !== 'found') return { ...area, status: 'unavailable', reason: reading.status === 'no-frame' ? 'frame-missing' : 'camera-failed' }
   const prediction = reading.reading.predictions.get(area.id)
   if (!prediction) return { ...area, status: 'unavailable', reason: 'no-prediction' }
-  return { ...area, status: 'available', stock: prediction.stock, compliant: prediction.compliant, detectedProductName: prediction.detectedProductName, confidence: combinedConfidence(prediction) }
+  return { ...area, status: 'available', stock: prediction.stock, compliant: prediction.compliant, detectedProductName: prediction.detectedProductName, stockConfidence: prediction.stockConfidence, complianceConfidence: prediction.complianceConfidence, confidence: combinedConfidence(prediction) }
 }
 
 /** Derives Areas, counts and the Tasks open at `now` from each Camera's Frame at or before `now`. */

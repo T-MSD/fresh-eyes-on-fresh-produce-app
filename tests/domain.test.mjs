@@ -8,7 +8,8 @@ import { formatTime } from '../src/time.ts'
 import { isOpenAt } from '../src/tasks.ts'
 import { buildStoreSnapshot, cameraName } from '../src/store.ts'
 import { isUnsure } from '../src/confidence.ts'
-import { parseCameraFrame, parseCameras, parseHourRange, parseTasks } from '../src/api.ts'
+import { parseAreaStock, parseCameraFrame, parseCameras, parseHourRange, parseTasks } from '../src/api.ts'
+import { describeArea, mostUrgentArea } from '../src/areaDisplay.ts'
 import { createDevAnnotations, labelBackupKey, labelStorageKey, loadLabels, resetUnreadableLabels, saveLabels } from '../src/labelling.ts'
 
 const imageUrl = (camera, image) => `http://api.test/images/${camera}/${image}`
@@ -79,6 +80,23 @@ test('Camera list boundary keeps Cameras without Areas and rejects foreign Areas
   assert.deepEqual(cameras[0].areas[0].corners[0], [-4, 1])
   assert.throws(() => parseCameras({ cameras: [{ camera: '6383', camera_name: null, areas: [planogramArea] }] }))
   assert.throws(() => parseCameras([{ camera: '6215', camera_name: null, areas: [] }]))
+})
+
+test('stock history is sorted by time and keeps unknown confidence', () => {
+  const readings = parseAreaStock([{ ts: iso(200), stock_level: 'half', stock_value: 0.5, stock_confidence: 0.7 }, { ts: iso(100), stock_level: 'empty', stock_value: 0, stock_confidence: null }])
+  assert.deepEqual(readings, [{ ts: 100, stock: 'empty', confidence: null }, { ts: 200, stock: 'half', confidence: 0.7 }])
+  assert.throws(() => parseAreaStock([{ ts: iso(100), stock_level: 'lots', stock_value: 1, stock_confidence: null }]))
+  assert.throws(() => parseAreaStock({ readings: [] }))
+})
+
+test('Camera view opens on the most urgent Area and describes each Area in words', () => {
+  const areas = snapshot(100, found(apiFrame(100, { areas: [
+    apiArea(),
+    apiArea({ area_id: '6215_8', number: 8, prediction: apiPrediction({ stock_level: 'half', planogram_compliant: false, stock_confidence: null }) }),
+    apiArea({ area_id: '6215_9', number: 9, prediction: null }),
+  ] }))).cameras[0].areas
+  assert.equal(mostUrgentArea(areas).id, '6215_8')
+  assert.deepEqual(areas.map(describeArea), ['Full', 'Half · wrong product · unsure', 'No prediction'])
 })
 
 test('Tasks and counts follow Now, and a full Area can hold the wrong product', () => {

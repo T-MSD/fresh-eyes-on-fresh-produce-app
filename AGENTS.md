@@ -55,6 +55,7 @@ The pipeline's [data contract](https://github.com/T-MSD/fresh-eyes-on-fresh-prod
 | `GET /cameras` | `{cameras: [{camera, camera_name, areas: [{area_id, number, product_id, product_name, corners}]}]}` |
 | `GET /cameras/{camera}/frame?at=` | `{camera, camera_name, filename, ts, width, height, areas: [{area_id, number, product_id, product_name, corners, prediction}]}` |
 | `GET /images/{camera}/{filename}` | The Frame JPEG |
+| `GET /areas/{area_id}/stock` | `[{ts, stock_level, stock_value, stock_confidence}]`, oldest first; `404` for an unknown Area |
 
 A `404` with no completed run means "no run yet", not an error. `prediction`, `width`/`height`, `camera_name`, detected product and confidences can be `null`. Parse every response in `src/api.ts`. Changing a shape is a breaking change: update both repos together.
 

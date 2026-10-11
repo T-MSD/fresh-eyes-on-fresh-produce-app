@@ -5,6 +5,7 @@ export type PlanogramArea = { id: string; number: number; productId: string; pro
 export type Frame = { image: string; ts: number; width: number; height: number; url: string }
 export type FrameReading = { status: 'readable'; frame: Frame } | { status: 'unreadable'; image: string; ts: number }
 export type AreaPrediction = { stock: StockLevel; compliant: boolean; detectedProductName: string | null; stockConfidence: number | null; complianceConfidence: number | null }
+export type StockReading = { ts: number; stock: StockLevel; confidence: number | null }
 export type CameraPlanogram = { id: string; name: string | null; areas: PlanogramArea[] }
 export type CameraFrameReading = { camera: CameraPlanogram; frame: FrameReading; predictions: ReadonlyMap<string, AreaPrediction> }
 

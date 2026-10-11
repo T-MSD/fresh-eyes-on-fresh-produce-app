@@ -1,16 +1,9 @@
-import { useEffect, useRef } from 'react'
 import { formatTime } from './time'
 import { isUnsure } from './confidence'
 import { extendsOutsideFrame } from './camera'
-import { CameraFrameView } from './CameraFrameView'
 import { Icon, type IconName } from './Icon'
+import { unavailableAreaLabels } from './areaDisplay'
 import { countAreas, type CameraFrame, type CameraState, type StoreArea, type StoreSnapshot, type StoreState } from './store'
-
-const unavailableAreaLabels: Record<Extract<StoreArea, { status: 'unavailable' }>['reason'], string> = {
-  'no-prediction': 'No prediction',
-  'frame-missing': 'Frame missing',
-  'camera-failed': 'Camera not loaded',
-}
 
 export function StoreStatus({ state, onRetry }: { state: Exclude<StoreState, StoreSnapshot>; onRetry: () => void }) {
   if (state.status === 'loading') return <p className="board-message" role="status">Loading Cameras and area predictions…</p>
@@ -26,7 +19,7 @@ function areaIcon(area: Extract<StoreArea, { status: 'available' }>): IconName {
   return area.stock === 'empty' ? 'restock' : area.stock === 'half' ? 'top-up' : 'check'
 }
 
-export function AreaIndicator({ area }: { area: StoreArea }) {
+function AreaIndicator({ area }: { area: StoreArea }) {
   const available = area.status === 'available'
   const uncertain = available && isUnsure(area.confidence)
   const label = available ? `Area ${area.number}: ${area.stock}${area.compliant ? '' : ', wrong product'}${uncertain ? ', low confidence' : ''}` : `Area ${area.number}: ${unavailableAreaLabels[area.reason].toLowerCase()}`
@@ -84,34 +77,4 @@ export function StoreOverview({ state, onSelect, onRetry }: { state: StoreSnapsh
     </div>}
     <div className="store-legend" aria-label="Area indicator legend"><span className="count-ok"><Icon name="check" /> Full</span><span className="count-half"><Icon name="top-up" /> Half</span><span className="count-empty"><Icon name="restock" /> Empty</span><span className="count-wrong"><Icon name="move-product" /> Wrong product</span><span>Dashed outline: low or unknown confidence</span></div>
   </div>
-}
-
-export type CameraSelection = { cameraId: string; areaId?: string; origin: 'tasks' | 'store' }
-
-function CameraFrameSection({ camera, selectedAreaId }: { camera: CameraState; selectedAreaId?: string }) {
-  const { frame } = camera
-  if (frame.status === 'available') return <><p>Frame <time>{formatTime(frame.frame.ts)}</time> · {frame.frame.image}</p><CameraFrameView key={frame.frame.image} cameraId={camera.id} frame={frame.frame} areas={camera.areas} showPredictions selectedAreaId={selectedAreaId} /></>
-  if (frame.status === 'unreadable') return <p className="label-frame-message" role="status">Frame <time>{formatTime(frame.ts)}</time> · {frame.image} is unreadable, so it cannot be shown.</p>
-  return <p className="label-frame-message" role="status">{frame.status === 'missing' ? 'No Frame at or before Now.' : 'This Camera could not be loaded.'}</p>
-}
-
-export function CameraDialog({ camera, selectedAreaId, origin, onClose, onVerify }: { camera: CameraState; selectedAreaId?: string; origin: 'tasks' | 'store'; onClose: () => void; onVerify: (areaId: string) => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    const dialog = dialogRef.current
-    dialog?.showModal()
-    return () => dialog?.close()
-  }, [])
-  return <dialog className="area-dialog camera-dialog" ref={dialogRef} onCancel={onClose} aria-labelledby="camera-dialog-title">
-    <div className="dialog-heading"><span>Camera {camera.id}</span><button onClick={onClose} aria-label="Close Camera details">×</button></div>
-    <h2 id="camera-dialog-title">{camera.name}</h2>
-    <CameraSummary camera={camera} />
-    <CameraFrameSection camera={camera} selectedAreaId={selectedAreaId} />
-    <ul className="camera-area-list">{camera.areas.map(area => <li key={area.id} className={area.id === selectedAreaId ? 'selected-camera-area' : ''}>
-      <AreaIndicator area={area} />
-      <div className="camera-area-copy"><strong>{area.productName}</strong><span>Area {area.number} · {area.status === 'available' ? `${area.stock}${area.compliant ? '' : ` · ⚠ wrong product${area.detectedProductName ? `: ${area.detectedProductName}` : ''}`}` : unavailableAreaLabels[area.reason]}{area.status === 'available' && isUnsure(area.confidence) ? ` · Unsure${area.confidence === null ? '' : ` ${Math.round(area.confidence * 100)}%`}` : ''}</span></div>
-      <button className="verify-label-button" onClick={() => onVerify(area.id)} aria-label={`Verify label for ${area.productName}, Area ${area.number}`}>Verify label</button>
-    </li>)}</ul>
-    <button className="dialog-close" onClick={onClose}>Back to {origin === 'tasks' ? 'Tasks' : 'Store'}</button>
-  </dialog>
 }

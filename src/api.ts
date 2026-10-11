@@ -1,4 +1,4 @@
-import type { AreaPrediction, CameraFrameReading, CameraPlanogram, FrameReading, PlanogramArea, Point } from './camera.ts'
+import type { AreaPrediction, CameraFrameReading, CameraPlanogram, FrameReading, PlanogramArea, Point, StockReading } from './camera.ts'
 import type { StockLevel, TaskFrame, TaskKind, TaskRecord } from './tasks.ts'
 import { array, nullableString, number, record, string } from './parse.ts'
 
@@ -70,6 +70,16 @@ export async function fetchCameraFrame(camera: string, now: number, signal: Abor
     return await getParsed(`/cameras/${encodeURIComponent(camera)}/frame?at=${at}`, signal, value => parseCameraFrame(value, frameImageUrl))
   } catch (error) {
     if (error instanceof ApiError && error.failure === 'not-found') return null
+    throw error
+  }
+}
+
+/** The Area's Stock level at every predicted Frame of the run, oldest first. An Area the run does not know has none. */
+export async function fetchAreaStock(areaId: string, signal: AbortSignal): Promise<StockReading[]> {
+  try {
+    return await getParsed(`/areas/${encodeURIComponent(areaId)}/stock`, signal, parseAreaStock)
+  } catch (error) {
+    if (error instanceof ApiError && error.failure === 'not-found') return []
     throw error
   }
 }
@@ -174,6 +184,15 @@ function planogramArea(value: Record<string, unknown>, camera: string): Planogra
   if (!Number.isInteger(areaNumber) || areaNumber < 1) throw new Error('Invalid Area number')
   const corners = record(value.corners)
   return { id: areaId(value.area_id, camera), number: areaNumber, productId: string(value.product_id), productName: string(value.product_name), corners: [point(corners.top_left), point(corners.top_right), point(corners.bottom_right), point(corners.bottom_left)] }
+}
+
+export function parseAreaStock(value: unknown): StockReading[] {
+  return array(value)
+    .map(value => {
+      const reading = record(value)
+      return { ts: timestamp(reading.ts), stock: stockLevel(reading.stock_level), confidence: confidence(reading.stock_confidence) }
+    })
+    .sort((left, right) => left.ts - right.ts)
 }
 
 export function parseCameras(value: unknown): CameraPlanogram[] {

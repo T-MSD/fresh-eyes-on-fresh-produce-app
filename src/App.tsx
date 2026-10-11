@@ -2,7 +2,8 @@ import { isUnsure } from './confidence'
 import { useEffect, useState } from 'react'
 import { taskGroups, type Task } from './tasks'
 import { Icon } from './Icon'
-import { CameraDialog, StoreOverview, StoreStatus, type CameraSelection } from './StoreOverview'
+import { StoreOverview, StoreStatus } from './StoreOverview'
+import { CameraPage, type CameraOrigin } from './CameraPage'
 import { formatTime } from './time'
 import { VerifyLabelDialog } from './VerifyLabelDialog'
 import type { LabelTarget } from './labelling'
@@ -63,46 +64,52 @@ function CompletionToast({ notice, onUndo, onDismiss }: { notice: CompletionNoti
   return <div className="completion-toast"><span><Icon name="check" />{task.product} marked as done</span><button onClick={() => onUndo(task)}>Undo</button></div>
 }
 
-type Overlay =
-  | { kind: 'closed' }
-  | { kind: 'camera'; selection: CameraSelection }
-  | { kind: 'verification'; target: LabelTarget; returnTo: CameraSelection | null }
+type Route = { view: 'tasks' } | { view: 'store' } | { view: 'camera'; cameraId: string; areaId: string | null }
 
-function readView(): 'tasks' | 'store' {
-  return window.location.hash === '#store' ? 'store' : 'tasks'
+function readRoute(): Route {
+  const hash = window.location.hash.slice(1)
+  if (hash === 'store') return { view: 'store' }
+  const camera = hash.match(/^camera\/(\d+)(?:\/(\d+_\d+))?$/)
+  if (camera) return { view: 'camera', cameraId: camera[1], areaId: camera[2] ?? null }
+  return { view: 'tasks' }
+}
+
+function CameraRoute({ route, store, origin, now, hiddenTaskIds, onComplete, onVerify }: { route: Extract<Route, { view: 'camera' }>; store: StoreSnapshot; origin: CameraOrigin; now: number; hiddenTaskIds: ReadonlySet<string>; onComplete: (task: Task) => void; onVerify: (cameraId: string, areaId: string) => void }) {
+  const camera = store.cameras.find(camera => camera.id === route.cameraId)
+  if (!camera) return <div className="board-message" role="status"><p>Camera {route.cameraId} is not in the latest analysis run.</p><a className="dialog-close" href={`#${origin}`}>Back to {origin === 'tasks' ? 'Tasks' : 'Store'}</a></div>
+  return <CameraPage key={`${camera.id}/${route.areaId}`} camera={camera} initialAreaId={route.areaId} origin={origin} now={now} hiddenTaskIds={hiddenTaskIds} onComplete={onComplete} onVerify={areaId => onVerify(camera.id, areaId)} />
 }
 
 function App() {
   const [selectedTime, setSelectedTime] = useState<number | null>(null)
-  const [view, setView] = useState<'tasks' | 'store'>(readView)
-  const [overlay, setOverlay] = useState<Overlay>({ kind: 'closed' })
+  const [route, setRoute] = useState<Route>(readRoute)
+  const [cameraOrigin, setCameraOrigin] = useState<CameraOrigin>('tasks')
+  const [verification, setVerification] = useState<LabelTarget | null>(null)
   const { store, timeline, now, updating, retry } = useStoreData(selectedTime)
   const completion = useTaskCompletion()
   useEffect(() => {
-    function syncView() { setView(readView()); setOverlay({ kind: 'closed' }) }
-    window.addEventListener('hashchange', syncView)
-    return () => window.removeEventListener('hashchange', syncView)
+    function syncRoute() { setRoute(readRoute()); setVerification(null); window.scrollTo(0, 0) }
+    window.addEventListener('hashchange', syncRoute)
+    return () => window.removeEventListener('hashchange', syncRoute)
   }, [])
   const findCamera = (cameraId: string) => store.status === 'ready' ? store.cameras.find(camera => camera.id === cameraId) : undefined
-  const selectedCamera = overlay.kind === 'camera' ? findCamera(overlay.selection.cameraId) : undefined
   const progress = timeline && timeline.end > timeline.start ? (now - timeline.start) / (timeline.end - timeline.start) * 100 : 0
+  const activeTab = route.view === 'camera' ? cameraOrigin : route.view
 
-  function selectTask(task: Task) { setOverlay({ kind: 'camera', selection: { cameraId: task.camera, areaId: task.area_id, origin: 'tasks' } }) }
-  function selectCamera(camera: CameraState) { setOverlay({ kind: 'camera', selection: { cameraId: camera.id, origin: 'store' } }) }
-  function verifyTask(task: Task) { setOverlay({ kind: 'verification', target: { cameraId: task.camera, areaId: task.area_id }, returnTo: null }) }
-  function verifyArea(camera: CameraState, areaId: string) {
-    setOverlay({ kind: 'verification', target: { cameraId: camera.id, areaId }, returnTo: overlay.kind === 'camera' ? overlay.selection : null })
+  function openCamera(cameraId: string, areaId: string | null, origin: CameraOrigin) {
+    setCameraOrigin(origin)
+    window.location.hash = areaId ? `camera/${cameraId}/${areaId}` : `camera/${cameraId}`
   }
-  function closeVerification() {
-    setOverlay(overlay.kind === 'verification' && overlay.returnTo ? { kind: 'camera', selection: overlay.returnTo } : { kind: 'closed' })
-  }
+  function selectTask(task: Task) { openCamera(task.camera, task.area_id, 'tasks') }
+  function selectCamera(camera: CameraState) { openCamera(camera.id, null, 'store') }
+  function verifyTask(task: Task) { setVerification({ cameraId: task.camera, areaId: task.area_id }) }
 
   return <>
     <header className="site-header">
       <a className="brand" href="#tasks" aria-label="Fresh Eyes home"><Icon name="eye" /><span>Fresh Eyes</span></a>
       <nav className="main-navigation" aria-label="Main navigation">
-        <a className={`nav-item${view === 'tasks' ? ' active' : ''}`} href="#tasks" aria-current={view === 'tasks' ? 'page' : undefined}>Tasks</a>
-        <a className={`nav-item${view === 'store' ? ' active' : ''}`} href="#store" aria-current={view === 'store' ? 'page' : undefined}>Store</a>
+        <a className={`nav-item${activeTab === 'tasks' ? ' active' : ''}`} href="#tasks" aria-current={route.view === 'tasks' ? 'page' : undefined}>Tasks</a>
+        <a className={`nav-item${activeTab === 'store' ? ' active' : ''}`} href="#store" aria-current={route.view === 'store' ? 'page' : undefined}>Store</a>
       </nav>
       <span className="store-name">Fruit & Vegetables</span>
     </header>
@@ -114,16 +121,16 @@ function App() {
       </div>
       <button className="jump-latest" onClick={() => setSelectedTime(timeline.end)}>Jump to latest</button>
     </section>}
-    <main id={view} className="app-page">
+    <main id={route.view} className="app-page">
       {store.status !== 'ready' ? <StoreStatus state={store} onRetry={retry} />
-        : view === 'store' ? <StoreOverview state={store} onSelect={selectCamera} onRetry={retry} />
-          : <TaskBoard state={store} hiddenTaskIds={completion.hiddenTaskIds} onComplete={completion.complete} onSelect={selectTask} onVerify={verifyTask} />}
+        : route.view === 'store' ? <StoreOverview state={store} onSelect={selectCamera} onRetry={retry} />
+          : route.view === 'camera' ? <CameraRoute route={route} store={store} origin={cameraOrigin} now={now} hiddenTaskIds={completion.hiddenTaskIds} onComplete={completion.complete} onVerify={(cameraId, areaId) => setVerification({ cameraId, areaId })} />
+            : <TaskBoard state={store} hiddenTaskIds={completion.hiddenTaskIds} onComplete={completion.complete} onSelect={selectTask} onVerify={verifyTask} />}
       <p className="demo-note">Predictions from the latest completed analysis run · Labels saved in this browser</p>
     </main>
     <div className="sr-only" role="status" aria-atomic="true">{completion.notice.status === 'undoable' ? `${completion.notice.task.product} marked as done` : ''}</div>
     <CompletionToast notice={completion.notice} onUndo={completion.undo} onDismiss={completion.dismiss} />
-    {overlay.kind === 'camera' && selectedCamera && <CameraDialog camera={selectedCamera} selectedAreaId={overlay.selection.areaId} origin={overlay.selection.origin} onVerify={areaId => verifyArea(selectedCamera, areaId)} onClose={() => setOverlay({ kind: 'closed' })} />}
-    {overlay.kind === 'verification' && <VerifyLabelDialog target={overlay.target} camera={findCamera(overlay.target.cameraId)} onClose={closeVerification} />}
+    {verification && <VerifyLabelDialog target={verification} camera={findCamera(verification.cameraId)} onClose={() => setVerification(null)} />}
   </>
 }
 

@@ -36,8 +36,13 @@ start   GET /hour-range                     → time slider bounds, Now = end
         GET /cameras                        → every Camera and its Planogram Areas
 Now     GET /cameras/{id}/frame?at=<Now>    → Frame + Area predictions, per Camera
         GET /images/{camera}/{filename}     → Frame image
-done    POST /tasks/done                    → sent after the 5 s undo window
+area    GET /areas/{area_id}/stock          → stock today for the Area selected on the Camera page
+done    POST /tasks/done                    → sent when that Task's 5 s undo window closes
 ```
+
+Views are hash routes: `#tasks`, `#store` and `#camera/<camera>/<area>`. A Task opens the Camera
+page with its Area selected. Tapping an Area tag on the Frame, or an Area card below it, selects
+that Area.
 
 `src/api.ts` is the only module that reads `VITE_API_URL` and parses responses. `src/store.ts`
 derives Areas, counts and the Tasks open at Now from the Frames fetched for Now. Moving the slider
