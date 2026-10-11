@@ -98,7 +98,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .store-overview h1 { margin-bottom: 25px; }
 .store-counts > div { background: white; border: 1px solid #dce0dc; border-radius: 19px; padding: 18px; }
 .store-counts dt { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 800; }
-.store-counts dt span { font-size: 22px; line-height: 1; }
+.store-counts dt svg { width: 22px; height: 22px; flex-shrink: 0; }
 .store-counts dd { margin: 13px 0 0; color: var(--ink); font-size: 38px; font-weight: 800; line-height: 1; }
 .count-empty { color: #b82720; }
 .count-wrong { color: #6220bf; }
@@ -112,20 +112,22 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .camera-meta { margin-top: 5px; color: var(--muted); font-size: 16px; line-height: 1.4; }
 .camera-meta time { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .area-indicators { display: flex; flex-wrap: wrap; gap: 6px; margin: 17px 0; }
-.area-indicator { display: inline-flex; position: relative; align-items: center; justify-content: center; width: 18px; height: 23px; border: 2px solid transparent; border-radius: 4px; font-size: 14px; font-weight: 800; flex: 0 0 18px; }
-.stock-full { background: #2ba060; }
-.stock-half { background: linear-gradient(to top, #e9a614 50%, white 50%); border-color: #946500; }
-.stock-empty { background: #fff3f0; border-color: #c52a23; }
-.empty-slash { width: 2px; height: 21px; background: #c52a23; transform: rotate(33deg); }
-.wrong-product { border: 3px solid #873bff; color: #6220bf; font-size: 12px; }
+.area-indicator { display: inline-flex; position: relative; align-items: center; justify-content: center; width: 22px; height: 26px; border: 2px solid transparent; border-radius: 5px; font-size: 14px; font-weight: 800; flex: 0 0 22px; }
+.area-indicator svg { width: 15px; height: 15px; stroke-width: 2.5; }
+.stock-full { background: #2ba060; color: white; }
+.stock-half { background: #fff0cb; border-color: #946500; color: #875d00; }
+.stock-empty { background: #fbe5e2; border-color: #c52a23; color: #a8261d; }
+.wrong-product { background: #6220bf; border: 2px solid #6220bf; color: white; }
 .uncertain { border-style: dashed; border-color: #606772; }
-.wrong-product.uncertain { border-color: #873bff; }
+.wrong-product.uncertain { border-color: #b892ff; }
 .area-unavailable { background: #ecefeb; border-color: #90978f; border-style: dashed; color: #606772; }
 .camera-summary { font-weight: 800; font-size: 16px; line-height: 1.4; color: #41474d; }
 .all-ok { color: #197241; }
 .camera-notice, .store-notice { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: #f2f4f1; border-radius: 12px; color: #41474d; font-size: 15px; line-height: 1.4; margin-top: 14px; }
 .store-notice { border: 1px dashed #939b92; margin-bottom: 24px; }
 .store-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 24px; font-size: 12px; color: var(--muted); }
+.store-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.store-legend svg { width: 15px; height: 15px; flex-shrink: 0; }
 .camera-area-list { list-style: none; padding: 0; margin: 0 0 24px; }
 .camera-area-list li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #e3e6e1; font-size: 14px; }
 .verify-task { width: 100%; border: 0; border-top: 1px solid #dce0d9; background: white; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 13px 10px; font-size: 16px; font-weight: 750; color: #41474d; }
@@ -176,7 +178,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .camera-stock-empty { fill: #df3b3280; }
 .camera-stock-half { fill: #e9a61480; }
 .camera-stock-full { fill: #2ba06080; }
-.camera-wrong-product { stroke: #873bff; stroke-opacity: 1; stroke-width: 5; }
+.camera-wrong-product { fill: #6220bfb3; stroke: #873bff; stroke-opacity: 1; stroke-width: 5; }
 .camera-uncertain, .camera-area-unavailable { stroke-dasharray: 8 5; }
 .camera-polygon-label { fill: white; stroke: #191c1e; stroke-width: 2px; paint-order: stroke; font-size: 14px; font-weight: 800; }
 
@@ -202,7 +204,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .camera-card { padding: 20px; }
   .camera-title { font-size: 23px; }
   .camera-meta, .camera-summary { font-size: 18px; }
-  .area-indicator { width: 20px; flex-basis: 20px; height: 26px; }
+  .area-indicator { width: 26px; flex-basis: 26px; height: 30px; }
+  .area-indicator svg { width: 17px; height: 17px; }
   .area-indicators { gap: 7px; }
 }
 
@@ -248,7 +251,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .camera-title { font-size: 20px; }
   .camera-meta { font-size: 14px; }
   .area-indicators { gap: 5px; }
-  .area-indicator { width: 16px; flex-basis: 16px; height: 22px; }
+  .area-indicator { width: 20px; flex-basis: 20px; height: 24px; }
+  .area-indicator svg { width: 13px; height: 13px; }
   .camera-summary { font-size: 15px; }
 }
 

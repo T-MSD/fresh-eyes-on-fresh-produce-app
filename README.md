@@ -10,35 +10,43 @@ Stack: React 19, TypeScript, Vite, Tailwind CSS v4, oxlint.
 Requires [pnpm](https://pnpm.io). With Node's corepack: `corepack enable`.
 
 ```bash
-pnpm install
-pnpm dev          # prepares local dataset, then serves http://localhost:5173
+cp .env.example .env   # VITE_API_URL, default http://localhost:8000
+pnpm dev               # http://localhost:5173
 ```
+
+The app reads everything from the API in
+[fresh-eyes-on-fresh-produce-pipeline](https://github.com/T-MSD/fresh-eyes-on-fresh-produce-pipeline).
+Start it with `CORS_ORIGINS=http://localhost:5173` and at least one completed run.
 
 ## Scripts
 
 | Command | Purpose |
 |---|---|
 | `pnpm dev` | Dev server with hot reload |
-| `pnpm build` | Prepare dataset, type-check and build to `dist/` |
+| `pnpm build` | Type-check and build to `dist/` |
 | `pnpm preview` | Serve the production build |
 | `pnpm lint` | Lint with oxlint |
-| `pnpm test` | Verify clocks, Frame selection, domain types, storage and export |
+| `pnpm test` | Verify clocks, API parsing, store derivation, domain types, storage and export |
 
-The API lives in
-[fresh-eyes-on-fresh-produce-pipeline](https://github.com/T-MSD/fresh-eyes-on-fresh-produce-pipeline).
+## Data flow
 
-## Design preview dataset
-
-`pnpm dev` and `pnpm build` prepare Frames and Planogram metadata from the supplied dataset. Generated `public/label-frames/` and `public/labelling-dataset.json` are ignored by Git. Keep the original dataset outside this repository.
-
-The default source is `../new_dataset_hackathon_junctionx_10_oct_2026_v2`, with `planogram.json` and either `training/<camera>/<unix_ts>.jpg` or the organisers’ `Frutas e Legumes (train & test)/<camera>/<unix_ts>.jpg` directory. Set `DATASET_DIRECTORY` to use another location:
-
-```bash
-DATASET_DIRECTORY=/path/to/dataset pnpm dev
-DATASET_DIRECTORY=/path/to/dataset pnpm build
+```text
+start   GET /hour-range                     → time slider bounds, Now = end
+        GET /tasks                          → every Task of the run, with opened/closed Frames
+        GET /cameras                        → every Camera and its Planogram Areas
+Now     GET /cameras/{id}/frame?at=<Now>    → Frame + Area predictions, per Camera
+        GET /images/{camera}/{filename}     → Frame image
+done    POST /tasks/done                    → sent after the 5 s undo window
 ```
 
-The preview uses demo predictions. Tasks, Store, Camera views and verification all select the latest real Frame at or before Now using Unix timestamps. Display times use `Europe/Lisbon` through `src/time.ts`.
+`src/api.ts` is the only module that reads `VITE_API_URL` and parses responses. `src/store.ts`
+derives Areas, counts and the Tasks open at Now from the Frames fetched for Now. Moving the slider
+refetches Camera Frames after it settles; the previous state stays on screen meanwhile.
+
+The Camera list comes from the run's dataset, so a new Planogram needs no app change. A Camera
+without a Frame at Now still shows, with its Areas unavailable. A Camera that fails to load shows
+as not loaded without blocking the rest.
+Display times use `Europe/Lisbon` through `src/time.ts`.
 
 ## Verified labels
 

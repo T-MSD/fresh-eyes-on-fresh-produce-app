@@ -45,18 +45,18 @@ The UI/UX score breaks ties between teams. Design for a staff member on a phone,
 
 ## API contract
 
-The API returns one rich prediction per frame × area:
+The pipeline's [data contract](https://github.com/T-MSD/fresh-eyes-on-fresh-produce-pipeline/blob/main/AGENTS.md#data-contract) is the source of truth. Every endpoint reads the latest completed run; timestamps are ISO 8601 UTC.
 
-```json
-{
-  "camera": "6215", "image": "1751052241.jpg", "ts": 1751052241, "area_id": "6215_2",
-  "product_id": "11908", "product_name": "BANANA CAT I CNT KG",
-  "planogram_compliant": true, "stock_level": "half", "stock_value": 0.5,
-  "detected_product_id": "11908", "compliance_confidence": 0.91, "stock_confidence": 0.74
-}
-```
+| Endpoint | Returns |
+|---|---|
+| `GET /hour-range` | `{run_id, start, end}`; both `null` when the run has no predictions |
+| `GET /tasks` | `{tasks: [{camera, area_id, product_id, product_name, kind, opened, closed}]}`, `kind` = `restock` / `move_product` / `top_up` |
+| `POST /tasks/done` | `{area_id, kind, opened_filename}` → `204` |
+| `GET /cameras` | `{cameras: [{camera, camera_name, areas: [{area_id, number, product_id, product_name, corners}]}]}` |
+| `GET /cameras/{camera}/frame?at=` | `{camera, camera_name, filename, ts, width, height, areas: [{area_id, number, product_id, product_name, corners, prediction}]}` |
+| `GET /images/{camera}/{filename}` | The Frame JPEG |
 
-Area polygons come from the planogram endpoint, not from predictions. Changing either shape is a breaking change: update both repos together.
+A `404` with no completed run means "no run yet", not an error. `prediction`, `width`/`height`, `camera_name`, detected product and confidences can be `null`. Parse every response in `src/api.ts`. Changing a shape is a breaking change: update both repos together.
 
 ## Non-negotiables
 
