@@ -23,12 +23,8 @@ export type StoreState =
 
 const staleAfterSeconds = 30 * 60
 
-const fallbackCameraNames: Record<string, string> = {
-  '6376': 'Citrus & kiwi', '6443': 'Tomatoes', '6462': 'Berries & grapes', '6215': 'Banana island',
-  '6594': 'Onions & garlic', '6386': 'Cabbages', '6491': 'Stone fruit', '6591': 'Potatoes',
-  '6383': 'Greens & peppers', '6371': 'Melons', '6373': 'Apples & pears', '6385': 'Apples',
-  '6468': 'Tropical', '6781': 'Onions & potatoes',
-}
+const productsInCameraName = 2
+const minimumAreasForSecondaryProduct = 2
 
 export function countAreas(areas: StoreArea[]): StoreCounts {
   const counts: StoreCounts = { empty: 0, wrong: 0, half: 0, ok: 0, unavailable: 0 }
@@ -47,8 +43,32 @@ function urgency(camera: CameraState): number {
   return counts.empty > 0 ? 0 : counts.wrong > 0 ? 1 : counts.half > 0 ? 2 : 3
 }
 
-function cameraName(planogram: CameraPlanogram): string {
-  return planogram.name ?? fallbackCameraNames[planogram.id] ?? `Camera ${planogram.id}`
+function productWord(productName: string): string {
+  const word = productName.trim().split(/\s+/)[0].toLocaleLowerCase('pt-PT')
+  return word.charAt(0).toLocaleUpperCase('pt-PT') + word.slice(1)
+}
+
+/** The API's Camera name, else the Camera's most common Planogram products, e.g. "Banana · Citrinos". */
+export function cameraName(planogram: CameraPlanogram): string {
+  if (planogram.name) return planogram.name
+  const spellingsPerProduct = new Map<string, Map<string, number>>()
+  for (const area of planogram.areas) {
+    const word = productWord(area.productName)
+    const key = word.normalize('NFD').replace(/\p{M}/gu, '')
+    const spellings = spellingsPerProduct.get(key) ?? new Map<string, number>()
+    spellings.set(word, (spellings.get(word) ?? 0) + 1)
+    spellingsPerProduct.set(key, spellings)
+  }
+  const products = [...spellingsPerProduct.values()]
+    .map(spellings => {
+      const counts = [...spellings]
+      return { word: counts.reduce((best, current) => current[1] > best[1] ? current : best)[0], areas: counts.reduce((total, [, areas]) => total + areas, 0) }
+    })
+    .sort((left, right) => right.areas - left.areas)
+    .filter((product, index) => index === 0 || product.areas >= minimumAreasForSecondaryProduct)
+    .slice(0, productsInCameraName)
+    .map(product => product.word)
+  return products.length ? products.join(' · ') : `Camera ${planogram.id}`
 }
 
 function combinedConfidence(prediction: AreaPrediction): number | null {
