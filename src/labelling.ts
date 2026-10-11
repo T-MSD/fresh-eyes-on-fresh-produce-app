@@ -1,4 +1,5 @@
 import type { StockLevel } from './tasks.ts'
+import { array, record, string } from './parse.ts'
 
 export type LabelTarget = { cameraId: string; areaId: string }
 export type SavedLabel = { camera: string; image: string; areaId: string; productId: string; stock: StockLevel; compliant: boolean }
@@ -6,21 +7,6 @@ export type LabelsState = { status: 'ready'; labels: SavedLabel[] } | { status: 
 export type LabelStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 export const labelStorageKey = 'fresh-eyes-labels-v1'
 export const labelBackupKey = 'fresh-eyes-labels-backup-v1'
-
-function record(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('Expected an object')
-  return Object.fromEntries(Object.entries(value))
-}
-
-function string(value: unknown): string {
-  if (typeof value !== 'string' || !value.length) throw new Error('Expected a non-empty string')
-  return value
-}
-
-function array(value: unknown): unknown[] {
-  if (!Array.isArray(value)) throw new Error('Expected an array')
-  return value
-}
 
 function parseLabels(value: unknown): SavedLabel[] {
   return array(value).map((value): SavedLabel => {

@@ -49,7 +49,7 @@ The pipeline's [data contract](https://github.com/T-MSD/fresh-eyes-on-fresh-prod
 
 | Endpoint | Returns |
 |---|---|
-| `GET /hour-range` | `{run_id, start, end}`; both `null` when the run has no predictions |
+| `GET /hour-range` | `{start, end}`; both `null` when the run has no predictions |
 | `GET /tasks` | `{tasks: [{camera, area_id, product_id, product_name, kind, opened, closed}]}`, `kind` = `restock` / `move_product` / `top_up` |
 | `POST /tasks/done` | `{area_id, kind, opened_filename}` → `204` |
 | `GET /cameras` | `{cameras: [{camera, camera_name, areas: [{area_id, number, product_id, product_name, corners}]}]}` |

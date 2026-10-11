@@ -6,11 +6,12 @@ export type CompletionNotice = { status: 'none' } | { status: 'undoable'; task: 
 
 const undoWindowMilliseconds = 5000
 
-/** Hides a Task as soon as it is marked done and saves it to the API once the undo window closes. */
+/** Hides a Task as soon as it is marked done and saves it to the API once its own undo window closes. */
 export function useTaskCompletion() {
   const [hiddenTaskIds, setHiddenTaskIds] = useState<ReadonlySet<string>>(() => new Set())
-  const [notice, setNotice] = useState<CompletionNotice>({ status: 'none' })
-  const pending = useRef<{ task: Task; timer: ReturnType<typeof setTimeout> } | null>(null)
+  const [pendingTasks, setPendingTasks] = useState<Task[]>([])
+  const [failedTask, setFailedTask] = useState<Task | null>(null)
+  const timers = useRef(new Map<string, { task: Task; timer: ReturnType<typeof setTimeout> }>())
 
   function setHidden(taskId: string, hidden: boolean) {
     setHiddenTaskIds(previous => {
@@ -21,41 +22,46 @@ export function useTaskCompletion() {
     })
   }
 
-  function save() {
-    const current = pending.current
-    if (!current) return
-    clearTimeout(current.timer)
-    pending.current = null
-    const { task } = current
-    setNotice(previous => previous.status === 'undoable' && previous.task.id === task.id ? { status: 'none' } : previous)
+  function takePending(taskId: string): Task | null {
+    const entry = timers.current.get(taskId)
+    if (!entry) return null
+    clearTimeout(entry.timer)
+    timers.current.delete(taskId)
+    setPendingTasks(previous => previous.filter(task => task.id !== taskId))
+    return entry.task
+  }
+
+  function save(taskId: string) {
+    const task = takePending(taskId)
+    if (!task) return
     markTaskDone(task).catch(() => {
       setHidden(task.id, false)
-      setNotice({ status: 'failed', task })
+      setFailedTask(task)
     })
   }
 
   useEffect(() => {
-    window.addEventListener('pagehide', save)
-    return () => window.removeEventListener('pagehide', save)
+    function saveAll() { for (const taskId of [...timers.current.keys()]) save(taskId) }
+    window.addEventListener('pagehide', saveAll)
+    return () => window.removeEventListener('pagehide', saveAll)
   })
 
   function complete(task: Task) {
-    save()
+    if (timers.current.has(task.id)) return
     setHidden(task.id, true)
-    setNotice({ status: 'undoable', task })
-    pending.current = { task, timer: setTimeout(save, undoWindowMilliseconds) }
+    setFailedTask(null)
+    setPendingTasks(previous => [...previous, task])
+    timers.current.set(task.id, { task, timer: setTimeout(() => save(task.id), undoWindowMilliseconds) })
   }
 
-  function undo() {
-    const current = pending.current
-    if (!current) return
-    clearTimeout(current.timer)
-    pending.current = null
-    setHidden(current.task.id, false)
-    setNotice({ status: 'none' })
+  function undo(task: Task) {
+    if (takePending(task.id)) setHidden(task.id, false)
   }
 
-  function dismiss() { setNotice({ status: 'none' }) }
+  function dismiss() { setFailedTask(null) }
+
+  const lastPending = pendingTasks.at(-1)
+  const notice: CompletionNotice = failedTask ? { status: 'failed', task: failedTask } : lastPending ? { status: 'undoable', task: lastPending } : { status: 'none' }
 
   return { hiddenTaskIds, notice, complete, undo, dismiss }
 }

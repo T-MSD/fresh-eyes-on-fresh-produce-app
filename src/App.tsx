@@ -56,10 +56,11 @@ function TaskBoard({ state, hiddenTaskIds, onComplete, onSelect, onVerify }: { s
   </>
 }
 
-function CompletionToast({ notice, onUndo, onDismiss }: { notice: CompletionNotice; onUndo: () => void; onDismiss: () => void }) {
+function CompletionToast({ notice, onUndo, onDismiss }: { notice: CompletionNotice; onUndo: (task: Task) => void; onDismiss: () => void }) {
   if (notice.status === 'none') return null
   if (notice.status === 'failed') return <div className="completion-toast" role="alert"><span>Could not save {notice.task.product} as done. It is back in the list.</span><button onClick={onDismiss}>Dismiss</button></div>
-  return <div className="completion-toast"><span><Icon name="check" />{notice.task.product} marked as done</span><button onClick={onUndo}>Undo</button></div>
+  const { task } = notice
+  return <div className="completion-toast"><span><Icon name="check" />{task.product} marked as done</span><button onClick={() => onUndo(task)}>Undo</button></div>
 }
 
 type Overlay =

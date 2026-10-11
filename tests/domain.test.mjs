@@ -34,10 +34,10 @@ test('Lisbon clock handles winter, summer and midnight', () => {
 })
 
 test('hour range parses UTC bounds and an empty run', () => {
-  assert.deepEqual(parseHourRange({ run_id: 1, start: '2025-06-27T08:00:00Z', end: '2025-06-27T20:00:00Z' }), { start: 1751011200, end: 1751054400 })
-  assert.equal(parseHourRange({ run_id: 1, start: null, end: null }), null)
-  assert.throws(() => parseHourRange({ run_id: 1, start: '2025-06-27T08:00:00', end: '2025-06-27T20:00:00Z' }))
-  assert.throws(() => parseHourRange({ run_id: 1, start: '2025-06-27T20:00:00Z', end: '2025-06-27T08:00:00Z' }))
+  assert.deepEqual(parseHourRange({ start: '2025-06-27T08:00:00Z', end: '2025-06-27T20:00:00Z' }), { start: 1751011200, end: 1751054400 })
+  assert.equal(parseHourRange({ start: null, end: null }), null)
+  assert.throws(() => parseHourRange({ start: '2025-06-27T08:00:00', end: '2025-06-27T20:00:00Z' }))
+  assert.throws(() => parseHourRange({ start: '2025-06-27T20:00:00Z', end: '2025-06-27T08:00:00Z' }))
 })
 
 test('Task boundary maps kinds and rejects unknown kinds and foreign Areas', () => {

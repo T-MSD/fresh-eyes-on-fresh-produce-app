@@ -1,5 +1,6 @@
 import type { AreaPrediction, CameraFrameReading, CameraPlanogram, FrameReading, PlanogramArea, Point } from './camera.ts'
 import type { StockLevel, TaskFrame, TaskKind, TaskRecord } from './tasks.ts'
+import { array, nullableString, number, record, string } from './parse.ts'
 
 export type ApiFailure = 'not-found' | 'unreachable' | 'invalid-response'
 
@@ -80,30 +81,6 @@ export async function markTaskDone(task: { area_id: string; kind: TaskKind; open
     body: JSON.stringify({ area_id: task.area_id, kind: apiTaskKinds[task.kind], opened_filename: task.openedImage }),
     keepalive: true,
   })
-}
-
-function record(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('Expected an object')
-  return Object.fromEntries(Object.entries(value))
-}
-
-function string(value: unknown): string {
-  if (typeof value !== 'string' || !value.length) throw new Error('Expected a non-empty string')
-  return value
-}
-
-function nullableString(value: unknown): string | null {
-  return value === null ? null : string(value)
-}
-
-function number(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('Expected a finite number')
-  return value
-}
-
-function array(value: unknown): unknown[] {
-  if (!Array.isArray(value)) throw new Error('Expected an array')
-  return value
 }
 
 function timestamp(value: unknown): number {
