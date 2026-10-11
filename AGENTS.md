@@ -56,7 +56,24 @@ The API returns one rich prediction per frame × area:
 }
 ```
 
-Area polygons come from the planogram endpoint, not from predictions. Changing either shape is a breaking change: update both repos together.
+The camera view uses `GET /cameras/{camera}/frame?at=<ISO 8601 Z>` for the last frame at or
+before the selected timeline time (latest when omitted). It returns
+`{camera, camera_name, filename, ts, width, height, areas}`; name and dimensions may be null.
+Every area contains `{area_id, number, product_id, product_name, corners, prediction}`.
+Corners are `{top_left, top_right, bottom_right, bottom_left}` pixel pairs. Prediction is
+null when missing, otherwise `{planogram_compliant, detected_product_id,
+detected_product_name, stock_level, stock_value, compliance_confidence, stock_confidence}`.
+Detected product fields and confidence estimates may be null.
+
+`GET /images/{camera}/{filename}` serves the JPEG. `GET /areas/{area_id}/stock` returns
+an array of `{ts, stock_level, stock_value, stock_confidence}` in timestamp order for
+the Stock today bars. A known area without predictions returns `[]`.
+
+All endpoints use the latest completed run, skip running and failed runs, and never fall
+back to older runs. Camera, area and product ids are external ids scoped to that run's
+dataset. No completed run, unknown camera or area, no eligible frame or missing image
+returns 404. Timestamps are UTC ISO 8601 ending in `Z`; invalid or naive `at` returns 422.
+Changing these shapes is a breaking change: update both repos together.
 
 ## Non-negotiables
 

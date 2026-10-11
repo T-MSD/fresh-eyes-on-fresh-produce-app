@@ -173,6 +173,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .label-warning { color: #95311d; background: #fff1e8; border-radius: 10px; padding: 12px; font-size: 15px; line-height: 1.5; }
 
 .selected-camera-area { outline: 2px solid #6e40c9; outline-offset: 2px; border-radius: 12px; padding: 12px; }
+.stock-history { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; }
+.stock-sample { display: grid; gap: 6px; min-width: 64px; padding: 12px 6px; border: 2px solid #64748b; border-radius: 6px; text-align: center; }
+.stock-sample.uncertain { border-style: dashed; }
+.stock-sample time { font-size: 12px; background: white; color: #18212b; }
 .camera-stock-empty { fill: #df3b3280; }
 .camera-stock-half { fill: #e9a61480; }
 .camera-stock-full { fill: #2ba06080; }

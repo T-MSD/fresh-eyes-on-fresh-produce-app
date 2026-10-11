@@ -38,7 +38,17 @@ DATASET_DIRECTORY=/path/to/dataset pnpm dev
 DATASET_DIRECTORY=/path/to/dataset pnpm build
 ```
 
-The preview uses demo predictions. Tasks, Store, Camera views and verification all select the latest real Frame at or before Now using Unix timestamps. Display times use `Europe/Lisbon` through `src/time.ts`.
+The preview uses demo predictions. Tasks, Store and verification select the latest real Frame
+at or before Now using Unix timestamps. Display times use `Europe/Lisbon` through `src/time.ts`.
+
+Set `VITE_API_URL` in `.env` to use the API for Camera views. Opening a task requests
+`GET /cameras/{camera}/frame?at=<ISO 8601 Z>` at the home timeline time, shows every area,
+and selects the task's area. Images come from `GET /images/{camera}/{filename}`; missing
+dimensions are read from the image. Missing predictions show as unavailable, and unknown
+confidence remains unsure. The selected area's Stock today bars use
+`GET /areas/{area_id}/stock`. Loading, missing data and request errors have explicit states.
+The API must include the app's origin in its comma-separated `CORS_ORIGINS` setting.
+With `VITE_API_URL` unset, Camera views use the local preview.
 
 ## Verified labels
 
